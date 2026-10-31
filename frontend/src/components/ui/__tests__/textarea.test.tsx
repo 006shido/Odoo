@@ -21,3 +21,4 @@ describe('Textarea', () => {
     expect(screen.getByPlaceholderText('Disabled notes')).toBeDisabled();
   });
 });
+

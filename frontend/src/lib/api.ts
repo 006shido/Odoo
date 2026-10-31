@@ -78,13 +78,13 @@ export const api = {
   get: <T>(endpoint: string, options?: Omit<RequestOptions, 'body' | 'method'>) =>
     request<T>(endpoint, { ...options, method: 'GET' }),
 
-  post: <T>(endpoint: string, body?: unknown, options?: Omit<RequestOptions, 'body' | 'method'>) =>
+  post: <T>(endpoint: string, body: unknown = {}, options?: Omit<RequestOptions, 'body' | 'method'>) =>
     request<T>(endpoint, { ...options, method: 'POST', body }),
 
-  put: <T>(endpoint: string, body?: unknown, options?: Omit<RequestOptions, 'body' | 'method'>) =>
+  put: <T>(endpoint: string, body: unknown = {}, options?: Omit<RequestOptions, 'body' | 'method'>) =>
     request<T>(endpoint, { ...options, method: 'PUT', body }),
 
-  patch: <T>(endpoint: string, body?: unknown, options?: Omit<RequestOptions, 'body' | 'method'>) =>
+  patch: <T>(endpoint: string, body: unknown = {}, options?: Omit<RequestOptions, 'body' | 'method'>) =>
     request<T>(endpoint, { ...options, method: 'PATCH', body }),
 
   delete: <T>(endpoint: string, options?: Omit<RequestOptions, 'body' | 'method'>) =>

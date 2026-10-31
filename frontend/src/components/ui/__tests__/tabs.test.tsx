@@ -24,3 +24,4 @@ describe('Tabs', () => {
     expect(screen.getByText('Yearly billing selected')).toBeInTheDocument();
   });
 });
+

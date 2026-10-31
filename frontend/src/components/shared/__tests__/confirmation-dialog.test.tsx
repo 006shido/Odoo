@@ -29,3 +29,4 @@ describe('ConfirmationDialog', () => {
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 });
+

@@ -8,8 +8,8 @@ Brightloop uses a **premium, restrained, Apple-inspired** visual language. The i
 
 1. **Editorial Typography** — Strong hierarchy with Inter font, clear scale from 12px to 36px
 2. **Generous Whitespace** — Purposeful spacing that gives content room to breathe
-3. **Calm Surfaces** — Warm white/light neutral backgrounds (`#FAFAF9` and `#FFFFFF`), near-black text (`#1C1917`)
-4. **Restrained Accent** — Single indigo accent color (`#4F46E5`) used sparingly for primary actions and focus states
+3. **Calm Surfaces** — Warm white/light neutral backgrounds, near-black text
+4. **Restrained Accent** — Single indigo accent color used sparingly for primary actions and focus states
 5. **Subtle Motion** — Short, purposeful transitions (150ms); respects `prefers-reduced-motion`
 6. **Readable Density** — Business tables remain efficient; minimalism never hides important data
 
@@ -68,7 +68,8 @@ Brightloop uses a **premium, restrained, Apple-inspired** visual language. The i
 
 ## Spacing
 
-Based on a 4px grid:
+Based on a 4px grid. Common values:
+
 - `1` = 4px — Tight padding (badge internals)
 - `2` = 8px — Inline spacing, icon gaps
 - `3` = 12px — Form field gap
@@ -80,63 +81,61 @@ Based on a 4px grid:
 
 ---
 
-## Radii & Shadows
+## Radii
 
-| Token | Radii Value | Usage |
+| Token | Value | Usage |
 |---|---|---|
 | `sm` | 6px | Badges, small buttons |
-| `md` | 8px | Buttons, inputs, textareas, cards |
-| `lg` | 12px | Dialogs, alert dialogs, large cards |
+| `md` | 8px | Buttons, inputs, cards |
+| `lg` | 12px | Dialogs, large cards |
 | `xl` | 16px | Hero cards, modals |
 | `full` | 9999px | Avatars, pills |
 
 ---
 
-## Reusable Components
+## Shadows
 
-### UI Primitives (`src/components/ui/`)
-- **Button** — variants: default, secondary, outline, ghost, destructive, link; sizes: sm, default, lg, icon
-- **Input** — clean text input with focus ring and error support
-- **Textarea** — multi-line input with consistent padding and typography
-- **Label** — accessible form label primitive via Radix
-- **Select** — polished dropdown selection via Radix Select
-- **Badge** — status and categorical indicators with semantic variants
-- **Card** — structured surface with header, title, description, content, footer
-- **Dialog** — accessible modal dialog primitive via Radix Dialog
-- **DropdownMenu** — context and action menus with submenus and shortcuts via Radix
-- **Tabs** — segmented navigation and content switching via Radix Tabs
-- **Pagination** — accessible page links, previous/next buttons, ellipsis
-- **AlertDialog** — accessible modal for destructive or confirmation flows
-- **Separator** — horizontal and vertical dividers
-- **Tooltip** — hover helper overlays via Radix Tooltip
-- **Skeleton** — pulse placeholder for content loading
-- **Alert** — prominent notification boxes with icon variants
-- **DataTable** — TanStack Table wrapper with column sorting and empty states
-
-### Shared Components (`src/components/shared/`)
-- **PageHeader** — page title, description, breadcrumbs, action buttons
-- **Breadcrumbs** — hierarchical path navigation
-- **ConfirmationDialog** — pre-wired modal for destructive or sensitive operations
-- **EmptyState** — standardized empty state with icon, message, and CTA
-- **ErrorState** — error alert with optional retry action
-- **LoadingState** — full-page or inline skeleton loading
-- **StatusBadge** — mapped status badges for subscriptions, quotes, and invoices
+| Token | Usage |
+|---|---|
+| `xs` | Subtle elevation (table headers) |
+| `sm` | Cards, dropdown triggers |
+| `md` | Dropdowns, popovers |
+| `lg` | Dialogs, modals |
 
 ---
 
-## Feature-Based Folder Architecture (`src/features/`)
+## Components
 
-All business logic, views, hooks, and sub-components are organized by domain feature:
-- `auth/` — Sign in, password reset, session recovery
-- `dashboard/` — Admin & Staff operational metrics
-- `customers/` — Customer directory, profile, and detail views
-- `catalogue/` — Products, variants, and catalogue management
-- `plans/` — Subscription plan builder and pricing rules
-- `quotations/` — Quote builder, PDF preview, send, and conversion
-- `subscriptions/` — Subscription lifecycle, timeline, Control Tower
-- `invoices/` — Invoice lists, billing periods, payment status
-- `payments/` — Payment recording and invoice allocation
-- `discounts/` — Discount rules and redemption tracking
-- `reports/` — Normalized MRR/ARR, ageing, and collection reports
-- `portal/` — Customer self-service portal
-- `settings/` — Workspace settings, staff user administration, numbering
+### Primitives
+- **Button** — default, secondary, outline, ghost, destructive, link variants
+- **Input** — text/number/email with border and focus ring
+- **Label** — form labels using Radix primitive
+- **Select** — dropdown selection using Radix
+- **Badge** — status display with semantic colors
+- **Card** — content container with header/content/footer
+- **Dialog** — modal overlay using Radix
+- **Separator** — horizontal/vertical divider
+- **Tooltip** — hover information using Radix
+- **Skeleton** — loading placeholder with pulse
+- **Alert** — informational banners
+
+### Shared
+- **PageHeader** — title + description + breadcrumbs + actions
+- **Breadcrumbs** — navigation trail with chevron separators
+- **StatusBadge** — semantic badge mapping for all business statuses
+- **EmptyState** — no-data placeholder with icon + CTA
+- **ErrorState** — error display with retry action
+- **LoadingState** — page/section loading skeleton
+- **DataTable** — TanStack Table wrapper with sorting and empty states
+
+---
+
+## Accessibility
+
+- All interactive elements have visible focus states (`ring-2 ring-accent ring-offset-2`)
+- Color contrast meets WCAG 2.2 AA for body text
+- All form controls have associated labels
+- Dialogs trap focus and support Escape to close
+- Motion respects `prefers-reduced-motion`
+- Keyboard navigation supported throughout
+
