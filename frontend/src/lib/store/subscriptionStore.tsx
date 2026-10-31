@@ -2,19 +2,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { api } from '@/lib/api';
 import type { Customer, Product, SubscriptionPlan, Discount, Quotation, Subscription, Invoice, Payment, BillingRun, WorkspaceSettings, NotificationItem, AuditLogItem, AuthUser, UserRole } from '@/types';
 
-const inrInitialWorkspace: PricingWorkspace = localizeWorkspaceToInr({
-  settings: initialSettings,
-  customers: initialCustomers,
-  products: initialProducts,
-  plans: initialPlans,
-  discounts: initialDiscounts,
-  quotations: initialQuotations,
-  subscriptions: initialSubscriptions,
-  invoices: initialInvoices,
-  payments: initialPayments,
-});
-
 export interface SubscriptionContextType {
+  purchasePlan: (data: {customer_id: string; plan_id: string; method: Payment['method']; reference: string}) => Promise<{subscription?: Subscription; invoice?: Invoice; payment?: Payment; error?: string}>;
   metrics: {mrr: string; arr: string; revenue_months: Array<{month: string; invoiced: string; collected: string}>};
   isSignedIn: boolean;
   isLoading: boolean;
@@ -93,7 +82,7 @@ type Snapshot = Pick<SubscriptionContextType, 'currentUser' | 'allUsers' | 'sett
 const blankSettings: WorkspaceSettings = {
  company_name: 'Brightloop', legal_name: 'Brightloop', contact_email: '', phone: '',
  address: {street: '', city: '', state: '', postal_code: '', country: ''}, tax_id: '',
- currency: 'USD', currency_symbol: '$', billing_timezone: 'UTC', default_tax_rate: '0.00',
+ currency: 'INR', currency_symbol: '₹', billing_timezone: 'UTC', default_tax_rate: '0.00',
  default_payment_terms: 'Net 15', quotation_prefix: 'QUO-', invoice_prefix: 'INV-', subscription_prefix: 'SUB-', payment_prefix: 'PAY-',
 };
 const empty: Snapshot = {
@@ -119,24 +108,30 @@ export function SubscriptionProvider({children}: {children: React.ReactNode}) {
  const requestVersion = useRef(0);
  const mutationPending = useRef(false);
  const [isSaving, setSaving] = useState(false);
- const refresh = useCallback(async () => {
-  if (mutationPending.current) return;
+ const refreshing = useRef<Promise<void> | null>(null);
+ const lastRefresh = useRef(0);
+ const refresh = useCallback((force = false): Promise<void> => {
+  if (mutationPending.current) return Promise.resolve();
+  if (refreshing.current && !force) return refreshing.current;
   const version = ++requestVersion.current;
-  try {
-   const session = await api.get<{authenticated: boolean}>('/auth/me/');
-   if (!session.authenticated) { setState(empty); setSignedIn(false); return; }
-   const result = await api.get<Snapshot>('/workspace/');
-   if (version === requestVersion.current) { setState(result); setSignedIn(true); setError(''); }
-  } catch (e) {
-   if (version !== requestVersion.current) return;
-   if ([401,403].includes((e as {status?: number}).status || 0)) { setState(empty); setSignedIn(false); }
-   else { setError(errorMessage(e)); throw e; }
-  } finally { if (version === requestVersion.current) setLoading(false); }
+  const task = (async () => {
+   try {
+    const result = await api.get<Snapshot>('/workspace/');
+    if (version === requestVersion.current) { setState(result); setSignedIn(true); setError(''); lastRefresh.current=Date.now(); }
+   } catch (e) {
+    if (version !== requestVersion.current) return;
+    if ([401,403].includes((e as {status?: number}).status || 0)) { setState(empty); setSignedIn(false); }
+    else { setError(errorMessage(e)); throw e; }
+   } finally { if (version === requestVersion.current) setLoading(false); }
+  })();
+  refreshing.current=task;
+  void task.finally(() => { if (refreshing.current===task) refreshing.current=null; }).catch(()=>{});
+  return task;
  }, []);
  useEffect(() => { void refresh().catch(() => {}); }, [refresh]);
  // Revalidate when returning to the app, so other team members' saves become visible.
  useEffect(() => {
-  const onFocus = () => { void refresh().catch(() => {}); };
+  const onFocus = () => { if (Date.now()-lastRefresh.current>30000) void refresh().catch(() => {}); };
   window.addEventListener('focus', onFocus);
   return () => window.removeEventListener('focus', onFocus);
  }, [refresh]);
@@ -163,9 +158,10 @@ export function SubscriptionProvider({children}: {children: React.ReactNode}) {
   setError(e.message); throw e;
  };
  const value: SubscriptionContextType = {
+  purchasePlan: async data => { const r=await mutate('purchasePlan',{data}); const sub=r.fresh.subscriptions.find(s=>s.id===r.id); const invoice=r.fresh.invoices.find(i=>i.subscription_id===r.id); const payment=r.fresh.payments.find(p=>p.allocations.some(a=>a.invoice_id===invoice?.id)); return {subscription:sub,invoice,payment}; },
   ...state, isSignedIn, isLoading, refresh,
   logout: async () => { await api.post('/auth/logout/'); ++requestVersion.current; setState(empty); setSignedIn(false); },
-  setCurrentUser: async () => { setLoading(true); await refresh(); },
+  setCurrentUser: async () => { setLoading(true); await refresh(true); },
   switchRole: unsupported, switchCustomerUser: unsupported, resetToDefaults: unsupported,
   updateSettings: data => save('updateSettings', {data}),
   createCustomer: async data => { const r=await mutate('createCustomer',{data}); return r.fresh.customers.find(x=>x.id===r.id)!; },

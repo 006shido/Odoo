@@ -125,8 +125,9 @@ export function CustomerPlansPage() {
     setIsProcessing(true);
     setCheckoutError('');
     const reference = `BL-${paymentMethod.toUpperCase()}-${Date.now().toString().slice(-8)}`;
-    window.setTimeout(() => {
-      const result = purchasePlan({
+    window.setTimeout(async () => {
+      try {
+      const result = await purchasePlan({
         customer_id: customer.id,
         plan_id: checkoutPlan.id,
         method: paymentMethod,
@@ -144,6 +145,8 @@ export function CustomerPlansPage() {
         total: result.payment.amount,
       });
       setNotice(`${checkoutPlan.name} is active. Your payment was simulated successfully.`);
+      } catch { setCheckoutError('Checkout unavailable. Please request a quotation instead.'); }
+      finally { setIsProcessing(false); }
     }, 900);
   };
 
@@ -255,7 +258,7 @@ export function CustomerPlansPage() {
               </Button>
               <button
                 type="button"
-                onClick={() => handleRequestQuote(plan)}
+                onClick={() => handleRequest(plan)}
                 disabled={requestedPlan === plan.id}
                 className="mt-2 w-full text-center text-[11px] text-text-tertiary hover:text-emerald-800 hover:underline disabled:no-underline"
               >

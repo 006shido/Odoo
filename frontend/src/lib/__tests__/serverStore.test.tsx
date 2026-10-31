@@ -23,7 +23,7 @@ beforeEach(() => { vi.resetAllMocks(); localStorage.clear(); });
 describe('Server-backed workspace', () => {
  it('ignores old demo sessions and starts signed out when Django says so', async () => {
   localStorage.setItem('brightloop_session', 'active');
-  vi.mocked(api.get).mockResolvedValue({ authenticated: false });
+  vi.mocked(api.get).mockRejectedValue({status:403});
   render(<SubscriptionProvider><Probe /></SubscriptionProvider>);
   expect(await screen.findByText('Signed out')).toBeInTheDocument();
   expect(screen.getByText('Customers: 0')).toBeInTheDocument();

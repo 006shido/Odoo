@@ -4,8 +4,11 @@ import uuid
 from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 
+from django.conf import settings
 from django.core.exceptions import ValidationError as ModelValidationError
 from django.db import transaction
+from django.db.models import Prefetch
+from django.core.cache import cache
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import serializers
@@ -18,7 +21,7 @@ from apps.catalogue.models import Product, ProductVariant, Tax
 from apps.plans.models import SubscriptionPlan, PlanItem
 from apps.quotations.models import Quotation, QuotationLineItem
 from apps.subscriptions.models import Subscription, SubscriptionLineItem, SubscriptionEvent
-from apps.billing.models import Invoice, BillingRun
+from apps.billing.models import Invoice, InvoiceLineItem, BillingRun
 from apps.billing.engine import run_billing_for_date
 from apps.discounts.models import Discount
 from apps.payments.models import Payment
@@ -29,7 +32,7 @@ DEFAULT_SETTINGS = {
     'company_name': 'Brightloop', 'legal_name': 'Brightloop',
     'contact_email': 'billing@brightloop.io', 'phone': '',
     'address': {'street': '', 'city': '', 'state': '', 'postal_code': '', 'country': ''},
-    'tax_id': '', 'currency': 'USD', 'currency_symbol': '$', 'billing_timezone': 'UTC',
+    'tax_id': '', 'currency': 'INR', 'currency_symbol': '₹', 'billing_timezone': 'UTC',
     'default_tax_rate': '0.00', 'default_payment_terms': 'Net 15',
     'quotation_prefix': 'QUO-', 'invoice_prefix': 'INV-',
     'subscription_prefix': 'SUB-', 'payment_prefix': 'PAY-',
@@ -53,15 +56,16 @@ def address(value):
 def snapshot(user):
     internal = user.role in ('admin', 'staff')
     customers = Customer.objects.all() if internal else Customer.objects.filter(user=user)
-    ids = list(customers.values_list('pk', flat=True))
-    customer_map = {str(c.pk): c for c in customers}
+    customer_list = list(customers)
+    ids = [c.pk for c in customer_list]
+    customer_map = {str(c.pk): c for c in customer_list}
     products = Product.objects.select_related('tax').prefetch_related('variants').order_by('-created_at')
-    plans = SubscriptionPlan.objects.prefetch_related('items__product', 'items__variant').order_by('-created_at')
+    plans = SubscriptionPlan.objects.prefetch_related(Prefetch('items', queryset=PlanItem.objects.select_related('product', 'variant'))).order_by('-created_at')
     if not internal:
         products = products.filter(is_active=True)
         plans = plans.filter(is_active=True)
-    quotes = Quotation.objects.filter(customer_id__in=ids).select_related('customer', 'plan', 'discount').prefetch_related('line_items__product', 'converted_subscriptions').order_by('-created_at')
-    subs = Subscription.objects.filter(customer_id__in=ids).select_related('customer', 'plan', 'source_quotation').prefetch_related('line_items__product', 'events').order_by('-created_at')
+    quotes = Quotation.objects.filter(customer_id__in=ids).select_related('customer', 'plan', 'discount').prefetch_related(Prefetch('line_items', queryset=QuotationLineItem.objects.select_related('product')), 'converted_subscriptions').order_by('-created_at')
+    subs = Subscription.objects.filter(customer_id__in=ids).select_related('customer', 'plan', 'source_quotation').prefetch_related(Prefetch('line_items', queryset=SubscriptionLineItem.objects.select_related('product')), 'events').order_by('-created_at')
     invoices = Invoice.objects.filter(customer_id__in=ids).select_related('customer', 'subscription').prefetch_related('line_items').order_by('-created_at')
     payments = Payment.objects.filter(customer_id__in=ids).select_related('customer', 'invoice').order_by('-created_at')
     settings = WorkspaceSettings.objects.filter(pk=1).first()
@@ -298,7 +302,7 @@ def execute(command, data, user, workspace):
     payload = data.get('data', data)
     if not isinstance(payload, dict):
         raise ValidationError('The command data must be an object.')
-    if user.role == 'customer' and command not in ('createQuotation', 'acceptQuotation', 'rejectQuotation', 'setSubscriptionAutoRenew'):
+    if user.role == 'customer' and command not in ('createQuotation', 'acceptQuotation', 'rejectQuotation', 'setSubscriptionAutoRenew', 'purchasePlan'):
         raise PermissionDenied('This action is restricted to internal staff.')
     if user.role != 'admin' and command in ('createProduct', 'updateProduct', 'createDiscount', 'updateDiscount', 'updateSettings'):
         raise PermissionDenied('Administrator access is required.')
@@ -381,6 +385,39 @@ def execute(command, data, user, workspace):
         if obj.scope == 'product' and not obj.specific_product_id:
             raise ValidationError('Select a product for this discount.')
         return str(persist(obj).pk)
+    if command == 'purchasePlan':
+        # Synthetic checkout is restricted to the explicitly enabled local demo identity.
+        if not (settings.DEBUG and settings.ENABLE_LOCAL_DEMO_LOGIN and user.email == 'demo-login-customer@example.invalid'):
+            raise PermissionDenied('Online payment collection is not configured. Please request a quotation.')
+        plan = get_object_or_404(SubscriptionPlan, pk=payload.get('plan_id'), is_active=True)
+        item = plan.items.first()
+        if not item:
+            raise ValidationError('This plan has no product.')
+        qid = create_quote({'customer_id': payload.get('customer_id'), 'expiry_date': timezone.now().date(),
+            'items': [{'product_id': str(item.product_id), 'plan_id': str(plan.pk),
+                       'quantity': plan.minimum_quantity, 'unit_price': str(plan.price)}]}, user, values)
+        quote = Quotation.objects.get(pk=qid)
+        quote.status = 'accepted'
+        quote.save()
+        sid = convert_quote(quote, user, values)
+        sub = Subscription.objects.get(pk=sid)
+        from apps.billing.engine import calculate_next_period_and_billing_date
+        end, next_date = calculate_next_period_and_billing_date(sub.start_date, sub.billing_frequency)
+        invoice = Invoice.objects.create(invoice_number=number(values['invoice_prefix']), customer=sub.customer,
+            subscription=sub, issue_date=sub.start_date, due_date=sub.start_date, billing_period_start=sub.start_date,
+            billing_period_end=end, status='confirmed', subtotal=sub.subtotal, tax_rate=sub.tax_rate,
+            tax_amount=sub.tax_amount, total_amount=sub.total_amount, balance_due=sub.total_amount,
+            notes='DEMO simulated checkout. No funds transferred.')
+        for line in sub.line_items.all():
+            InvoiceLineItem.objects.create(invoice=invoice, description=line.product.name, quantity=line.quantity,
+                unit_price=line.unit_price, tax_rate=line.tax_rate, amount=line.total_price)
+        payment = Payment(payment_number=number(values['payment_prefix']), customer=sub.customer, invoice=invoice,
+            amount=invoice.total_amount, payment_date=sub.start_date, payment_method=payload.get('method'),
+            transaction_reference=payload.get('reference', ''), notes='DEMO simulation; no real payment credentials stored.')
+        persist(payment)
+        sub.next_billing_date = next_date
+        sub.save(update_fields=['next_billing_date'])
+        return sid
     if command == 'createQuotation':
         return create_quote(payload, user, values)
     if command in ('sendQuotation', 'acceptQuotation', 'rejectQuotation', 'convertQuotationToSubscription'):
@@ -505,7 +542,13 @@ def execute(command, data, user, workspace):
 @permission_classes([IsAuthenticated])
 def workspace_view(request):
     if request.method == 'GET':
-        return Response(snapshot(request.user))
+        version = cache.get('workspace:snapshot-version', '0')
+        key = f'workspace:snapshot:{version}:{request.user.pk}:{request.user.role}'
+        result = cache.get(key)
+        if result is None:
+            result = snapshot(request.user)
+            cache.set(key, result, timeout=20)
+        return Response(result)
     command = request.data.get('action')
     data = request.data.get('payload', {})
     if not isinstance(command, str) or not isinstance(data, dict):
@@ -517,6 +560,7 @@ def workspace_view(request):
             result = execute(command, data, request.user, workspace)
             WorkspaceAudit.objects.create(actor=request.user.email, action=command,
                 entity_type='workspace', entity_id=str(result), details=f'{command} completed')
+        cache.set('workspace:snapshot-version', uuid.uuid4().hex, timeout=None)
         return Response({'id': result})
     except ModelValidationError as error:
         raise ValidationError(error.message_dict if hasattr(error, 'message_dict') else error.messages)

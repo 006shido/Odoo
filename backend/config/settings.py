@@ -119,6 +119,9 @@ CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:8000',
 ]
 
+# Explicit opt-in; endpoint also requires DEBUG and a loopback request.
+ENABLE_LOCAL_DEMO_LOGIN = os.environ.get('ENABLE_LOCAL_DEMO_LOGIN', 'False') == 'True'
+
 # OpenAI stays server-side. Configure OPENAI_API_KEY in backend/.env or the host's secret store.
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
 OPENAI_MODEL = os.environ.get('OPENAI_MODEL', 'gpt-6-luna')

@@ -15,3 +15,5 @@ The connection requires SSL. Production requires DATABASE_URL; SQLite fallback i
 Current validation: 35 migrations applied to development Supabase; no drift. 15 backend tests on isolated SQLite and 51 frontend tests passed. Live backend creation/conversion and browser create/reload persistence were verified; disposable verification records removed. No production/performance guarantee is implied.
 
 See ../docs/contracts/workspace-integration.md for supported commands and explicit feature boundaries, and INTEGRATION_REPORT.md for the session report. The intentionally irreversible security migrations require review before merge.
+
+Login reliability update: local .env now uses the transaction pooler on port 6543. Django returns connections after each request to a bounded psycopg pool (max 4) instead of accumulating session connections. Install the updated requirements.txt. The workspace snapshot is cached per user and role for 20 seconds and invalidated after writes. Login makes one workspace fetch, overlapping refreshes are deduplicated, and requests have timeouts. Workspace currency labels are INR; numeric amounts were not FX-converted.

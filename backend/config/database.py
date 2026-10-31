@@ -23,8 +23,9 @@ def database_config(base_dir: Path) -> dict:
         'PASSWORD': unquote(parsed.password or ''),
         'HOST': parsed.hostname,
         'PORT': str(parsed.port or 5432),
-        'CONN_MAX_AGE': 60,
+        'CONN_MAX_AGE': 0,
         'CONN_HEALTH_CHECKS': True,
         'DISABLE_SERVER_SIDE_CURSORS': True,
-        'OPTIONS': {'sslmode': sslmode, 'connect_timeout': 10, 'prepare_threshold': None},
+        'OPTIONS': {'sslmode': sslmode, 'connect_timeout': 10, 'prepare_threshold': None,
+                    'pool': {'min_size': 1, 'max_size': 4, 'timeout': 10}},
     }

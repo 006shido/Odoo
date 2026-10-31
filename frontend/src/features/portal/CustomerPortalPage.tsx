@@ -62,19 +62,7 @@ export function CustomerPortalPage() {
   }, [payments, activeCustomer]);
 
 
-  const closePaymentModal = () => {
-    if (isProcessing) return;
-    setIsPayModalOpen(false);
-    setPayingInvoice(null);
-    setPaymentReference('');
-    setPaymentError('');
-  };
-
-  const paymentOptions = [
-    { method: 'upi' as const, label: 'UPI', hint: 'GPay, PhonePe, BHIM', Icon: Smartphone },
-    { method: 'card' as const, label: 'Cards', hint: 'Credit or debit', Icon: CreditCard },
-    { method: 'bank_transfer' as const, label: 'Net banking', hint: 'Choose your bank', Icon: Building },
-  ];
+  const paymentMethodLabel = (method: string) => ({upi: 'UPI', card: 'Card', bank_transfer: 'Bank transfer', cash: 'Cash', other: 'Other'}[method] || method);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">

@@ -22,6 +22,8 @@ class DatabaseConfigTests(unittest.TestCase):
             self.assertEqual(config['USER'], 'postgres.example')
             self.assertEqual(config['OPTIONS']['sslmode'], 'require')
             self.assertIsNone(config['OPTIONS']['prepare_threshold'])
+            self.assertEqual(config['CONN_MAX_AGE'], 0)
+            self.assertEqual(config['OPTIONS']['pool']['max_size'], 4)
 
     def test_rejects_insecure_or_invalid_database(self):
         for url in ('sqlite:///test', 'postgresql://db/test?sslmode=disable'):
