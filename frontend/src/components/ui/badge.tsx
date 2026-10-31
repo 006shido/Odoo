@@ -3,22 +3,22 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const badgeVariants = cva(
-  'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2',
+  'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium tracking-tight transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:ring-offset-2',
   {
     variants: {
       variant: {
         default:
-          'border-transparent bg-accent text-accent-text',
+          'border-transparent bg-accent text-accent-text shadow-xs',
         secondary:
           'border-transparent bg-surface-secondary text-text-secondary',
         success:
-          'border-transparent bg-success-light text-success',
+          'border-success/20 bg-success-light text-success font-semibold',
         warning:
-          'border-transparent bg-warning-light text-warning',
+          'border-warning/20 bg-warning-light text-warning font-semibold',
         error:
-          'border-transparent bg-error-light text-error',
+          'border-error/20 bg-error-light text-error font-semibold',
         outline:
-          'border-border text-text-secondary',
+          'border-border text-text-secondary bg-surface/50 backdrop-blur-xs',
       },
     },
     defaultVariants: {
@@ -29,11 +29,27 @@ const badgeVariants = cva(
 
 export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof badgeVariants> {}
+    VariantProps<typeof badgeVariants> {
+  dot?: boolean;
+}
 
-function Badge({ className, variant, ...props }: BadgeProps) {
+function Badge({ className, variant, dot, children, ...props }: BadgeProps) {
   return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
+    <div className={cn(badgeVariants({ variant }), className)} {...props}>
+      {dot && (
+        <span
+          className={cn(
+            'h-1.5 w-1.5 rounded-full',
+            variant === 'success' && 'bg-success',
+            variant === 'warning' && 'bg-warning',
+            variant === 'error' && 'bg-error',
+            variant === 'default' && 'bg-white',
+            (!variant || variant === 'secondary' || variant === 'outline') && 'bg-text-tertiary',
+          )}
+        />
+      )}
+      {children}
+    </div>
   );
 }
 

@@ -174,7 +174,7 @@ export function DashboardPage() {
             </div>
           </div>
           <div className="mt-4">
-            <div className="text-3xl font-bold tracking-tight text-text-primary">
+            <div className="text-3xl font-bold tracking-tight text-text-primary tabular-nums">
               {formatCurrency(mrrAmount, settings.currency_symbol)}
             </div>
             <div className="flex items-center gap-1.5 mt-2 text-xs font-medium text-success">
@@ -195,7 +195,7 @@ export function DashboardPage() {
             </div>
           </div>
           <div className="mt-4">
-            <div className="text-3xl font-bold tracking-tight text-text-primary">
+            <div className="text-3xl font-bold tracking-tight text-text-primary tabular-nums">
               {formatCurrency(totalCollected, settings.currency_symbol)}
             </div>
             <p className="text-xs text-text-secondary mt-2">
@@ -215,7 +215,7 @@ export function DashboardPage() {
             </div>
           </div>
           <div className="mt-4">
-            <div className="text-3xl font-bold tracking-tight text-text-primary">
+            <div className="text-3xl font-bold tracking-tight text-text-primary tabular-nums">
               {activeSubs.length}
             </div>
             <div className="flex items-center gap-2 mt-2">
@@ -240,7 +240,7 @@ export function DashboardPage() {
             </div>
           </div>
           <div className="mt-4">
-            <div className="text-3xl font-bold tracking-tight text-text-primary">
+            <div className="text-3xl font-bold tracking-tight text-text-primary tabular-nums">
               {formatCurrency(outstandingBalance, settings.currency_symbol)}
             </div>
             <div className="flex items-center gap-2 mt-2">
