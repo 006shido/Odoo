@@ -38,3 +38,4 @@ describe('Badge', () => {
     expect(screen.getByText('Custom').className).toContain('custom-class');
   });
 });
+

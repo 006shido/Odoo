@@ -38,3 +38,4 @@ describe('Button', () => {
     expect(screen.getByRole('button').className).toContain('h-10');
   });
 });
+

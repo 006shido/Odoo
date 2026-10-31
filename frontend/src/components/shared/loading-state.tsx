@@ -36,3 +36,4 @@ export function LoadingState({ rows = 5, fullPage = false, className }: LoadingS
     </div>
   );
 }
+

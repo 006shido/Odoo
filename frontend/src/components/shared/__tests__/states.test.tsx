@@ -38,3 +38,4 @@ describe('ErrorState', () => {
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 });
+

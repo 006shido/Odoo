@@ -22,3 +22,4 @@ describe('formatDate', () => {
     expect(result).toContain('2026');
   });
 });
+
