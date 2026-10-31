@@ -20,6 +20,7 @@ import type { Invoice, InvoiceStatus, BillingRun } from '@/types';
 export function InvoicesPage() {
   const navigate = useNavigate();
   const {
+    currentUser,
     invoices,
     settings,
     voidInvoice,
@@ -180,14 +181,16 @@ export function InvoicesPage() {
                       <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1.5">
                           {inv.balance_due !== '0.00' && inv.status !== 'void' && (
-                            <Button
-                              size="sm"
-                              onClick={() => navigate('/payments')}
-                              className="h-8 text-xs rounded-xl shadow-xs"
-                            >
-                              <CreditCard className="h-3 w-3 mr-1" />
-                              Pay
-                            </Button>
+                            currentUser.role === 'customer' && (
+                              <Button
+                                size="sm"
+                                onClick={() => navigate('/portal')}
+                                className="h-8 text-xs rounded-xl shadow-xs"
+                              >
+                                <CreditCard className="h-3 w-3 mr-1" />
+                                Pay
+                              </Button>
+                            )
                           )}
                           <Button
                             variant="ghost"

@@ -62,6 +62,8 @@ export function CustomerPortalPage() {
   }, [payments, activeCustomer]);
 
 
+  const paymentMethodLabel = (method: string) => ({upi: 'UPI', card: 'Card', bank_transfer: 'Bank transfer', cash: 'Cash', other: 'Other'}[method] || method);
+
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       {/* Signed-in customer */}
@@ -341,7 +343,7 @@ export function CustomerPortalPage() {
                       <td className="px-6 py-4 font-semibold text-text-primary">{p.number}</td>
                       <td className="px-6 py-4 text-xs text-text-secondary">{p.received_date}</td>
                       <td className="px-6 py-4 text-xs capitalize text-text-primary">
-                        {p.method.replace('_', ' ')}
+                        {paymentMethodLabel(p.method)}
                       </td>
                       <td className="px-6 py-4 font-mono text-xs text-text-tertiary">{p.reference}</td>
                       <td className="px-6 py-4 font-bold text-right text-success">

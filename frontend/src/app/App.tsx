@@ -20,6 +20,7 @@ import { DiscountsPage } from '@/features/discounts/DiscountsPage';
 import { ReportsPage } from '@/features/reports/ReportsPage';
 import { CustomerPortalPage } from '@/features/portal/CustomerPortalPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
+import { AICopilotPage } from '@/features/ai/AICopilotPage';
 import { WelcomePage } from '@/app/pages/WelcomePage';
 import { LoginPage } from '@/app/pages/LoginPage';
 import { useSubscription } from '@/lib/store/subscriptionStore';
@@ -61,6 +62,7 @@ export function App() {
                     <Route path="/payments" element={<PaymentsPage />} />
                     <Route path="/discounts" element={<DiscountsPage />} />
                     <Route path="/reports" element={<ReportsPage />} />
+                    <Route path="/ai" element={<AICopilotPage />} />
                     <Route path="/portal" element={<CustomerPortalPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="*" element={<Navigate to="/dashboard" replace />} />
@@ -88,7 +90,7 @@ function AuthenticatedShell() {
   if (isLoading) return <div role="status" className="p-8">Loading your workspace…</div>;
 
   if (!isSignedIn) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
-  if (currentUser.role === 'customer' && !['/plans', '/portal'].includes(location.pathname)) {
+  if (currentUser.role === 'customer' && !['/plans', '/portal', '/ai'].includes(location.pathname)) {
     return <Navigate to="/plans" replace />;
   }
   if (currentUser.role === 'staff' && ['/products', '/discounts', '/reports', '/settings'].includes(location.pathname)) {

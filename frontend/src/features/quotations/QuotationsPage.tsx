@@ -66,7 +66,7 @@ export function QuotationsPage() {
       product_id: products[0]?.id || '',
       plan_id: plans[0]?.id,
       quantity: 1,
-      unit_price: plans[0]?.price || '149.00',
+      unit_price: plans[0]?.price || '999.00',
     },
   ]);
 
@@ -159,7 +159,7 @@ export function QuotationsPage() {
         product_id: defaultProd?.id || '',
         plan_id: defaultPlan?.id,
         quantity: 1,
-        unit_price: defaultPlan?.price || '99.00',
+        unit_price: defaultPlan?.price || '999.00',
       },
     ]);
   };
@@ -177,7 +177,7 @@ export function QuotationsPage() {
       if (field === 'product_id') {
         const matchingPlan = plans.find((p) => p.product_id === value);
         cur.plan_id = matchingPlan?.id;
-        cur.unit_price = matchingPlan?.price || '99.00';
+        cur.unit_price = matchingPlan?.price || '999.00';
       } else if (field === 'plan_id') {
         const selectedPlan = plans.find((p) => p.id === value);
         if (selectedPlan) {
@@ -686,7 +686,7 @@ export function QuotationsPage() {
                     <option value="">No Discount Applied</option>
                     {eligibleDiscounts.map((d) => (
                       <option key={d.id} value={d.id}>
-                        {d.code} — {d.name} ({d.type === 'percentage' ? `${d.value}%` : `$${d.value}`})
+                        {d.code} — {d.name} ({d.type === 'percentage' ? `${d.value}%` : formatCurrency(d.value, settings.currency_symbol)})
                       </option>
                     ))}
                   </select>
@@ -731,7 +731,7 @@ export function QuotationsPage() {
                           .filter((p) => p.product_id === line.product_id)
                           .map((p) => (
                             <option key={p.id} value={p.id}>
-                              {p.name} (${p.price})
+                              {p.name} ({formatCurrency(p.price, settings.currency_symbol)})
                             </option>
                           ))}
                       </select>

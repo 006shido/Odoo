@@ -30,3 +30,5 @@ Live Supabase: catalogue/customer/plan/quote conversion and fresh-session reads 
 
 ## Local demo role entry points
 Run python manage.py setup_demo_logins and set ENABLE_LOCAL_DEMO_LOGIN=True in the private backend .env for local demonstrations. GET /api/v1/auth/demo-login/ reports availability; POST with role admin/staff/customer creates a real Django session for a fixed synthetic demo identity. CSRF is mandatory. The endpoint is disabled unless DEBUG, explicit opt-in, a loopback host and a loopback client are all present. These accounts have unusable passwords and cannot use normal password login. Do not enable this feature for a deployed service. The Customer identity is linked to the DEMO Acme profile.
+
+Merge note: purchasePlan is an explicitly local-demo-only checkout action for the fixed demo customer identity. It persists a synthetic subscription, invoice and payment atomically with server prices. Normal customer accounts must request quotations; no real card details are transmitted or stored. Client-only pricing localization is not applied to authoritative server records.

@@ -26,8 +26,8 @@ export function CataloguePage() {
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
   const [productType, setProductType] = useState('software');
-  const [salesPrice, setSalesPrice] = useState('2500.00');
-  const [costPrice, setCostPrice] = useState('800.00');
+  const [salesPrice, setSalesPrice] = useState('999.00');
+  const [costPrice, setCostPrice] = useState('299.00');
   const [notes, setNotes] = useState('');
 
   // Add Variant Modal
@@ -35,7 +35,7 @@ export function CataloguePage() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [variantName, setVariantName] = useState('Brand: Odoo Edition');
   const [variantSku, setVariantSku] = useState('VAR-BRAND-ODOO-NEW');
-  const [priceModifier, setPriceModifier] = useState('560.00');
+  const [priceModifier, setPriceModifier] = useState('500.00');
 
   const fetchCatalogue = () => {
     setLoading(true);
@@ -51,8 +51,8 @@ export function CataloguePage() {
             name: 'Brightloop Core Business Software',
             sku: 'PROD-CORE-001',
             product_type: 'software',
-            sales_price: '2500.00',
-            cost_price: '800.00',
+            sales_price: '999.00',
+            cost_price: '299.00',
             tax_rate: '18.00',
             notes: 'Flagship multi-module cloud subscription suite',
             variants: [
@@ -60,8 +60,8 @@ export function CataloguePage() {
                 id: 'v1',
                 name: 'Brand: Odoo Edition',
                 sku: 'VAR-BRAND-ODOO',
-                price_modifier: '560.00',
-                effective_price: '3060.00',
+                price_modifier: '500.00',
+                effective_price: '1499.00',
               },
             ],
           },
@@ -70,8 +70,8 @@ export function CataloguePage() {
             name: 'High-Speed Cloud Storage (500GB)',
             sku: 'PROD-ADDON-STORAGE',
             product_type: 'addon',
-            sales_price: '499.00',
-            cost_price: '150.00',
+            sales_price: '199.00',
+            cost_price: '79.00',
             tax_rate: '18.00',
             notes: 'Customer on/off toggle storage add-on',
             variants: [],
@@ -164,7 +164,7 @@ export function CataloguePage() {
                         setSelectedProduct(prod);
                         setVariantName('Brand: Odoo Edition');
                         setVariantSku(`VAR-${prod.sku}-ODOO`);
-                        setPriceModifier('560.00');
+                        setPriceModifier('500.00');
                         setAddVariantOpen(true);
                       }}
                       className="h-8 gap-1 text-xs"
@@ -314,7 +314,7 @@ export function CataloguePage() {
                   step="0.01"
                   value={priceModifier}
                   onChange={(e) => setPriceModifier(e.target.value)}
-                  placeholder="+560.00"
+                  placeholder="+500.00"
                 />
               </div>
             </div>

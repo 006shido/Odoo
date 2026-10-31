@@ -3,6 +3,7 @@ import { api } from '@/lib/api';
 import type { Customer, Product, SubscriptionPlan, Discount, Quotation, Subscription, Invoice, Payment, BillingRun, WorkspaceSettings, NotificationItem, AuditLogItem, AuthUser, UserRole } from '@/types';
 
 export interface SubscriptionContextType {
+  purchasePlan: (data: {customer_id: string; plan_id: string; method: Payment['method']; reference: string}) => Promise<{subscription?: Subscription; invoice?: Invoice; payment?: Payment; error?: string}>;
   metrics: {mrr: string; arr: string; revenue_months: Array<{month: string; invoiced: string; collected: string}>};
   isSignedIn: boolean;
   isLoading: boolean;
@@ -151,6 +152,7 @@ export function SubscriptionProvider({children}: {children: React.ReactNode}) {
   setError(e.message); throw e;
  };
  const value: SubscriptionContextType = {
+  purchasePlan: async data => { const r=await mutate('purchasePlan',{data}); const sub=r.fresh.subscriptions.find(s=>s.id===r.id); const invoice=r.fresh.invoices.find(i=>i.subscription_id===r.id); const payment=r.fresh.payments.find(p=>p.allocations.some(a=>a.invoice_id===invoice?.id)); return {subscription:sub,invoice,payment}; },
   ...state, isSignedIn, isLoading, refresh,
   logout: async () => { await api.post('/auth/logout/'); ++requestVersion.current; setState(empty); setSignedIn(false); },
   setCurrentUser: async () => { setLoading(true); await refresh(); },

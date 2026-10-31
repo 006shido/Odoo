@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'apps.discounts',
     'apps.payments',
     'apps.analytics',
+    'apps.ai_assistant',
 ]
 
 MIDDLEWARE = [
@@ -103,6 +104,9 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
+    'DEFAULT_THROTTLE_RATES': {
+        'ai_assistant': '20/hour',
+    },
 }
 
 # CORS settings
@@ -117,3 +121,7 @@ CSRF_TRUSTED_ORIGINS = [
 
 # Explicit opt-in; endpoint also requires DEBUG and a loopback request.
 ENABLE_LOCAL_DEMO_LOGIN = os.environ.get('ENABLE_LOCAL_DEMO_LOGIN', 'False') == 'True'
+
+# OpenAI stays server-side. Configure OPENAI_API_KEY in backend/.env or the host's secret store.
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
+OPENAI_MODEL = os.environ.get('OPENAI_MODEL', 'gpt-6-luna')

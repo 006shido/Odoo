@@ -1,18 +1,61 @@
 import { useMemo, useState } from 'react';
-import { ArrowRight, BadgeCheck, Check, Clock3, Sparkles } from 'lucide-react';
+import { ArrowRight, BadgeCheck, Building, Check, CheckCircle2, ChevronDown, CreditCard, Clock3, ShieldCheck, Smartphone, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useSubscription } from '@/lib/store/subscriptionStore';
-import { formatCurrency, multiplyDecimals } from '@/lib/decimal';
-import type { BillingFrequency, SubscriptionPlan } from '@/types';
+import { addDecimals, calculatePercentage, formatCurrency, multiplyDecimals } from '@/lib/decimal';
+import { cn } from '@/lib/utils';
+import type { BillingFrequency, PaymentMethod, SubscriptionPlan } from '@/types';
 
 type FrequencyFilter = 'all' | BillingFrequency;
 
+function isFinderModule(row: number, column: number, originRow: number, originColumn: number) {
+  const localRow = row - originRow;
+  const localColumn = column - originColumn;
+  if (localRow < 0 || localRow > 6 || localColumn < 0 || localColumn > 6) return null;
+  const outer = localRow === 0 || localRow === 6 || localColumn === 0 || localColumn === 6;
+  const center = localRow >= 2 && localRow <= 4 && localColumn >= 2 && localColumn <= 4;
+  return outer || center;
+}
+
+function MockUpiQr() {
+  const modules: Array<{ row: number; column: number }> = [];
+  for (let row = 0; row < 25; row += 1) {
+    for (let column = 0; column < 25; column += 1) {
+      const finder = isFinderModule(row, column, 0, 0)
+        ?? isFinderModule(row, column, 0, 18)
+        ?? isFinderModule(row, column, 18, 0);
+      const inFinderZone = (row < 8 && column < 8) || (row < 8 && column > 16) || (row > 16 && column < 8);
+      const filled = finder ?? (!inFinderZone && ((row * 11 + column * 7 + row * column) % 13 < 6));
+      if (filled) modules.push({ row, column });
+    }
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-2 rounded-xl border border-border bg-white p-4">
+      <svg role="img" aria-label="Decorative mock UPI QR code, not scannable" viewBox="0 0 25 25" className="h-40 w-40 rounded-lg" shapeRendering="crispEdges">
+        <rect width="25" height="25" fill="white" />
+        {modules.map(({ row, column }) => <rect key={`${row}-${column}`} x={column} y={row} width="1" height="1" fill="#123d32" />)}
+      </svg>
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-800">Mock UPI QR</span>
+      <span className="text-center text-[10px] text-text-tertiary">Preview only · not scannable</span>
+    </div>
+  );
+}
+
 export function CustomerPlansPage() {
-  const { currentUser, customers, plans, createQuotation, settings } = useSubscription();
+  const { currentUser, customers, plans, createQuotation, purchasePlan, settings } = useSubscription();
   const [frequency, setFrequency] = useState<FrequencyFilter>('all');
   const [requestedPlan, setRequestedPlan] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
+  const [checkoutPlan, setCheckoutPlan] = useState<SubscriptionPlan | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('upi');
+  const [cardDetails, setCardDetails] = useState({ name: '', number: '', expiry: '', cvv: '' });
+  const [upiId, setUpiId] = useState('demo@brightloop');
+  const [bankName, setBankName] = useState('State Bank of India');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [checkoutResult, setCheckoutResult] = useState<{ subscriptionNumber: string; invoiceNumber: string; paymentReference: string; total: string } | null>(null);
+  const [checkoutError, setCheckoutError] = useState('');
   const today = new Date().toISOString().slice(0, 10);
 
   const customer = customers.find((item) =>
@@ -52,6 +95,72 @@ export function CustomerPlansPage() {
     }
   };
 
+  const checkoutQuantity = Math.max(1, checkoutPlan?.minimum_quantity || 1);
+  const checkoutSubtotal = checkoutPlan
+    ? addDecimals(multiplyDecimals(checkoutPlan.price, checkoutQuantity), checkoutPlan.setup_fee || '0.00')
+    : '0.00';
+  const checkoutTax = calculatePercentage(checkoutSubtotal, settings.default_tax_rate);
+  const checkoutTotal = addDecimals(checkoutSubtotal, checkoutTax);
+  const paymentOptions = [
+    { method: 'upi' as const, label: 'UPI', hint: 'GPay, PhonePe, BHIM', Icon: Smartphone },
+    { method: 'card' as const, label: 'Cards', hint: 'Credit or debit', Icon: CreditCard },
+    { method: 'bank_transfer' as const, label: 'Net banking', hint: 'Choose your bank', Icon: Building },
+  ];
+
+  const handleCheckout = () => {
+    if (!checkoutPlan || !customer || isProcessing) return;
+    if (paymentMethod === 'upi' && !/^[\w.-]+@[\w.-]+$/.test(upiId.trim())) {
+      setCheckoutError('Enter a demo UPI ID such as demo@brightloop.');
+      return;
+    }
+    if (paymentMethod === 'card') {
+      const digits = cardDetails.number.replace(/\D/g, '');
+      const [monthText] = cardDetails.expiry.split('/');
+      const month = Number(monthText);
+      if (!cardDetails.name.trim() || digits.length !== 16 || month < 1 || month > 12 || !/^\d{2}\/\d{2}$/.test(cardDetails.expiry) || !/^\d{3,4}$/.test(cardDetails.cvv)) {
+        setCheckoutError('Enter the sample card details shown below to continue.');
+        return;
+      }
+    }
+    setIsProcessing(true);
+    setCheckoutError('');
+    const reference = `BL-${paymentMethod.toUpperCase()}-${Date.now().toString().slice(-8)}`;
+    window.setTimeout(async () => {
+      try {
+      const result = await purchasePlan({
+        customer_id: customer.id,
+        plan_id: checkoutPlan.id,
+        method: paymentMethod,
+        reference,
+      });
+      setIsProcessing(false);
+      if (result.error || !result.subscription || !result.invoice || !result.payment) {
+        setCheckoutError(result.error || 'We couldn’t complete this demo payment. Please try again.');
+        return;
+      }
+      setCheckoutResult({
+        subscriptionNumber: result.subscription.number,
+        invoiceNumber: result.invoice.number,
+        paymentReference: result.payment.reference,
+        total: result.payment.amount,
+      });
+      setNotice(`${checkoutPlan.name} is active. Your payment was simulated successfully.`);
+      } catch { setCheckoutError('Checkout unavailable. Please request a quotation instead.'); }
+      finally { setIsProcessing(false); }
+    }, 900);
+  };
+
+  const closeCheckout = () => {
+    if (isProcessing) return;
+    setCheckoutPlan(null);
+    setCheckoutResult(null);
+    setCheckoutError('');
+    setPaymentMethod('upi');
+    setCardDetails({ name: '', number: '', expiry: '', cvv: '' });
+    setUpiId('demo@brightloop');
+    setBankName('State Bank of India');
+  };
+
   const frequencies: Array<{ value: FrequencyFilter; label: string }> = [
     { value: 'all', label: 'All plans' },
     { value: 'daily', label: 'Daily' },
@@ -70,7 +179,7 @@ export function CustomerPlansPage() {
           </Badge>
           <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Find your Brightloop plan</h2>
           <p className="mt-3 max-w-xl text-sm leading-6 text-emerald-50/75 sm:text-base">
-            Compare clear pricing, choose the tools your team needs, and request a tailored quotation in a few clicks.
+            Compare clear pricing, choose the tools your team needs, and activate your plan with a quick checkout.
           </p>
         </div>
         <div className="relative mt-7 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-emerald-50/80">
@@ -136,14 +245,25 @@ export function CustomerPlansPage() {
 
               <Button
                 type="button"
-                onClick={() => handleRequest(plan)}
-                disabled={requestedPlan === plan.id}
+                onClick={() => {
+                  setPaymentMethod('upi');
+                  setCheckoutResult(null);
+                  setCheckoutError('');
+                  setCheckoutPlan(plan);
+                }}
                 className="mt-7 h-11 w-full rounded-xl bg-[#123d32] text-white hover:bg-[#1b5143]"
               >
-                {requestedPlan === plan.id ? 'Request sent' : 'Request this plan'}
-                {requestedPlan !== plan.id && <ArrowRight className="ml-2 h-4 w-4" />}
+                Subscribe & pay
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-              <p className="mt-2 text-center text-[11px] text-text-tertiary">No payment is collected when you request a quote.</p>
+              <button
+                type="button"
+                onClick={() => handleRequest(plan)}
+                disabled={requestedPlan === plan.id}
+                className="mt-2 w-full text-center text-[11px] text-text-tertiary hover:text-emerald-800 hover:underline disabled:no-underline"
+              >
+                {requestedPlan === plan.id ? 'Quote request sent' : 'Prefer a quote? Request one'}
+              </button>
             </article>
             );
           })}
@@ -157,6 +277,108 @@ export function CustomerPlansPage() {
       )}
 
       <p className="text-center text-xs text-text-tertiary">Need help choosing? <a className="font-medium text-emerald-800 hover:underline" href={`mailto:${settings.contact_email}`}>Talk to our team</a></p>
+
+      {checkoutPlan && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <button type="button" aria-label="Close checkout" className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={closeCheckout} />
+          <section role="dialog" aria-modal="true" aria-labelledby="checkout-title" className="relative z-10 max-h-[92dvh] w-full max-w-lg space-y-5 overflow-y-auto overscroll-contain rounded-2xl border border-border bg-surface p-5 shadow-2xl sm:p-6 animate-in zoom-in-95 duration-150">
+            {checkoutResult ? (
+              <div className="py-3 text-center">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-700"><CheckCircle2 className="h-8 w-8" /></div>
+                <h3 id="checkout-title" className="text-xl font-bold text-text-primary">Payment successful</h3>
+                <p className="mt-1 text-sm text-text-secondary">Your {checkoutPlan.name} subscription is now active.</p>
+                <p className="mt-5 text-3xl font-extrabold text-text-primary">{formatCurrency(checkoutResult.total, settings.currency_symbol)}</p>
+                <div className="mx-auto mt-5 max-w-sm rounded-xl bg-surface-secondary p-3 text-left text-xs">
+                  <div className="flex justify-between gap-3 py-1.5"><span className="text-text-secondary">Subscription</span><span className="font-semibold text-text-primary">{checkoutResult.subscriptionNumber}</span></div>
+                  <div className="flex justify-between gap-3 py-1.5"><span className="text-text-secondary">Invoice</span><span className="font-semibold text-text-primary">{checkoutResult.invoiceNumber} · Paid</span></div>
+                  <div className="flex justify-between gap-3 py-1.5"><span className="text-text-secondary">Payment reference</span><span className="font-mono text-text-primary">{checkoutResult.paymentReference}</span></div>
+                </div>
+                <p className="mt-3 text-[11px] text-text-tertiary">Demo payment only. No real money was charged.</p>
+                <Button onClick={closeCheckout} className="mt-5 w-full rounded-xl bg-[#123d32] text-white hover:bg-[#1b5143]">Done</Button>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <h3 id="checkout-title" className="text-lg font-bold text-text-primary">Checkout · {checkoutPlan.name}</h3>
+                  <p className="mt-1 text-xs text-text-secondary">Review your first payment and select how you’d like to pay.</p>
+                </div>
+                <div className="rounded-xl border border-border/70 bg-surface-secondary p-4 text-sm">
+                  <div className="flex justify-between py-1"><span className="text-text-secondary">{checkoutPlan.name} · {checkoutPlan.frequency}</span><span>{formatCurrency(multiplyDecimals(checkoutPlan.price, checkoutQuantity), settings.currency_symbol)}</span></div>
+                  {checkoutPlan.setup_fee !== '0.00' && <div className="flex justify-between py-1"><span className="text-text-secondary">One-time setup</span><span>{formatCurrency(checkoutPlan.setup_fee, settings.currency_symbol)}</span></div>}
+                  <div className="flex justify-between py-1"><span className="text-text-secondary">Tax ({settings.default_tax_rate}%)</span><span>{formatCurrency(checkoutTax, settings.currency_symbol)}</span></div>
+                  <div className="mt-2 flex justify-between border-t border-border pt-3 font-bold text-text-primary"><span>Pay now</span><span>{formatCurrency(checkoutTotal, settings.currency_symbol)}</span></div>
+                </div>
+                <fieldset className="space-y-2" disabled={isProcessing}>
+                  <legend className="mb-2 text-xs font-semibold text-text-primary">Choose payment method</legend>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    {paymentOptions.map(({ method, label, hint, Icon }) => (
+                      <button key={method} type="button" aria-pressed={paymentMethod === method} onClick={() => setPaymentMethod(method)} className={cn('flex items-center gap-3 rounded-xl border p-3 text-left transition-all sm:flex-col sm:items-start sm:gap-2', paymentMethod === method ? 'border-accent bg-accent/10 text-accent ring-1 ring-accent' : 'border-border bg-surface text-text-secondary hover:border-border-strong')}>
+                        <Icon className="h-5 w-5 shrink-0" />
+                        <span><span className="block text-xs font-semibold">{label}</span><span className="mt-0.5 block text-[10px] opacity-75">{hint}</span></span>
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+                {paymentMethod === 'upi' && (
+                  <div className="grid gap-4 rounded-xl border border-border bg-surface-secondary/50 p-4 sm:grid-cols-[180px_1fr] sm:items-center">
+                    <MockUpiQr />
+                    <div className="space-y-3">
+                      <div>
+                        <h4 className="text-sm font-semibold text-text-primary">Pay with UPI</h4>
+                        <p className="mt-1 text-xs leading-5 text-text-secondary">A real checkout would use a scannable QR. This sample is decorative; enter a demo UPI ID and press Pay to simulate approval.</p>
+                      </div>
+                      <label className="block text-xs font-medium text-text-secondary" htmlFor="checkout-upi-id">UPI ID</label>
+                      <input id="checkout-upi-id" value={upiId} onChange={(event) => setUpiId(event.target.value)} placeholder="name@bank" autoComplete="off" className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary outline-none focus:ring-2 focus:ring-accent" />
+                    </div>
+                  </div>
+                )}
+                {paymentMethod === 'card' && (
+                  <div className="space-y-3 rounded-xl border border-border bg-surface-secondary/50 p-4">
+                    <div>
+                      <h4 className="text-sm font-semibold text-text-primary">Card details</h4>
+                      <p className="mt-1 text-[11px] text-text-secondary">Demo checkout only. Don’t enter real card credentials; these fields are not sent or saved.</p>
+                    </div>
+                    <label className="block space-y-1 text-xs font-medium text-text-secondary">Name on card
+                      <input value={cardDetails.name} onChange={(event) => setCardDetails((current) => ({ ...current, name: event.target.value }))} placeholder="Name as printed on card" autoComplete="off" className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary outline-none focus:ring-2 focus:ring-accent" />
+                    </label>
+                    <label className="block space-y-1 text-xs font-medium text-text-secondary">Card number
+                      <input inputMode="numeric" maxLength={19} value={cardDetails.number} onChange={(event) => setCardDetails((current) => ({ ...current, number: event.target.value.replace(/[^\d ]/g, '') }))} placeholder="Enter card number" autoComplete="off" className="w-full rounded-lg border border-border bg-surface px-3 py-2 font-mono text-sm text-text-primary outline-none focus:ring-2 focus:ring-accent" />
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <label className="block space-y-1 text-xs font-medium text-text-secondary">Expiry
+                        <input inputMode="numeric" maxLength={5} placeholder="MM/YY" value={cardDetails.expiry} onChange={(event) => setCardDetails((current) => ({ ...current, expiry: event.target.value }))} autoComplete="off" className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary outline-none focus:ring-2 focus:ring-accent" />
+                      </label>
+                      <label className="block space-y-1 text-xs font-medium text-text-secondary">CVV
+                        <input inputMode="numeric" maxLength={4} value={cardDetails.cvv} onChange={(event) => setCardDetails((current) => ({ ...current, cvv: event.target.value.replace(/\D/g, '') }))} placeholder="CVV" autoComplete="off" className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary outline-none focus:ring-2 focus:ring-accent" />
+                      </label>
+                    </div>
+                  </div>
+                )}
+                {paymentMethod === 'bank_transfer' && (
+                  <div className="space-y-2 rounded-xl border border-border bg-surface-secondary/50 p-4">
+                    <label htmlFor="checkout-bank" className="block text-xs font-medium text-text-secondary">Select your bank</label>
+                    <div className="relative">
+                      <select id="checkout-bank" value={bankName} onChange={(event) => setBankName(event.target.value)} className="h-11 w-full appearance-none rounded-lg border border-border bg-surface px-3 pr-10 text-sm text-text-primary shadow-xs outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20">
+                        <option>State Bank of India</option><option>HDFC Bank</option><option>ICICI Bank</option><option>Axis Bank</option><option>Kotak Mahindra Bank</option>
+                      </select>
+                      <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
+                    </div>
+                    <p className="text-[11px] text-text-secondary">You’ll see a simulated bank authorization after you continue.</p>
+                  </div>
+                )}
+                <div className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2.5 text-[11px] leading-4 text-amber-900"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" /><span>Hackathon demo mode: payment, invoice, and subscription are simulated. No real payment details or money are used.</span></div>
+                {checkoutError && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{checkoutError}</p>}
+                {isProcessing && <p role="status" className="text-center text-xs font-medium text-accent">Authorizing simulated payment…</p>}
+                <div className="sticky bottom-0 -mx-5 -mb-5 flex justify-end gap-2 border-t border-border/80 bg-surface px-5 pb-2 pt-3 sm:-mx-6 sm:-mb-6 sm:px-6">
+                  <Button variant="outline" size="sm" onClick={closeCheckout} disabled={isProcessing} className="rounded-xl">Cancel</Button>
+                  <Button size="sm" onClick={handleCheckout} disabled={isProcessing || !customer} className="rounded-xl bg-[#123d32] text-white hover:bg-[#1b5143]">{isProcessing ? 'Processing…' : `Pay ${formatCurrency(checkoutTotal, settings.currency_symbol)}`}</Button>
+                </div>
+                {!customer && <p className="text-right text-[11px] text-error">A linked customer account is required to subscribe.</p>}
+              </>
+            )}
+          </section>
+        </div>
+      )}
     </div>
   );
 }
