@@ -9,7 +9,7 @@ import {
   X,
 } from 'lucide-react';
 import { useSubscription } from '@/lib/store/subscriptionStore';
-import { formatCurrency } from '@/lib/decimal';
+import { addDecimals, formatCurrency } from '@/lib/decimal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -26,10 +26,14 @@ export function ProductsPage() {
     name: '',
     code: '',
     category: 'Software',
+    product_type: 'software' as 'software' | 'addon' | 'service' | 'physical',
     description: '',
     default_price: '99.00',
+    cost_price: '0.00',
+    tax_rate: '10.00',
+    notes: '',
     variants: [
-      { id: 'v1', sku: '', name: 'Standard Edition', price: '99.00', status: 'active' as const },
+      { id: 'v1', sku: '', name: 'Standard Edition', price: '99.00', price_modifier: '0.00', status: 'active' as const },
     ],
   });
 
@@ -54,11 +58,15 @@ export function ProductsPage() {
       name: '',
       code: `PROD-NEW-${nextNum}`,
       category: 'Software',
+      product_type: 'software',
       description: '',
       default_price: '99.00',
+      cost_price: '0.00',
+      tax_rate: '10.00',
+      notes: '',
       variants: [
-        { id: `var-${Date.now()}-1`, sku: `SKU-STD-${nextNum}`, name: 'Standard Edition', price: '99.00', status: 'active' },
-        { id: `var-${Date.now()}-2`, sku: `SKU-PRO-${nextNum}`, name: 'Pro Edition', price: '199.00', status: 'active' },
+        { id: `var-${Date.now()}-1`, sku: `SKU-STD-${nextNum}`, name: 'Standard Edition', price: '99.00', price_modifier: '0.00', status: 'active' },
+        { id: `var-${Date.now()}-2`, sku: `SKU-ODOO-${nextNum}`, name: 'Odoo Brand', price: '659.00', price_modifier: '560.00', status: 'active' },
       ],
     });
     setIsCreateOpen(true);
@@ -74,6 +82,7 @@ export function ProductsPage() {
           sku: `${prev.code}-VAR-${prev.variants.length + 1}`,
           name: `Tier ${prev.variants.length + 1}`,
           price: '99.00',
+          price_modifier: '0.00',
           status: 'active',
         },
       ],
@@ -95,10 +104,19 @@ export function ProductsPage() {
       name: formData.name,
       code: formData.code,
       category: formData.category,
+      product_type: formData.product_type,
       description: formData.description,
       default_price: formData.default_price,
+      sales_price: formData.default_price,
+      cost_price: formData.cost_price,
+      tax_rate: formData.tax_rate,
+      notes: formData.notes,
       status: 'active',
-      variants: formData.variants,
+      variants: formData.variants.map((variant) => ({
+        ...variant,
+        price_modifier: variant.price_modifier || '0.00',
+        price: addDecimals(formData.default_price, variant.price_modifier || '0.00'),
+      })),
     });
     setIsCreateOpen(false);
   };
@@ -239,7 +257,7 @@ export function ProductsPage() {
                               {formatCurrency(v.price, settings.currency_symbol)}
                             </p>
                             <span className="text-[10px] text-text-tertiary uppercase font-medium">
-                              Base Price
+                              {v.price_modifier && v.price_modifier !== '0.00' ? `+${formatCurrency(v.price_modifier, settings.currency_symbol)} modifier` : 'Base Price'}
                             </span>
                           </div>
                         </div>
@@ -291,32 +309,50 @@ export function ProductsPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-text-primary">Category</label>
+                  <label className="text-xs font-semibold text-text-primary">Product Type</label>
                   <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    value={formData.product_type}
+                    onChange={(e) => {
+                      const product_type = e.target.value as typeof formData.product_type;
+                      const category = product_type === 'software' ? 'Software' : product_type === 'addon' ? 'Add-on' : product_type === 'service' ? 'Support' : 'Hardware';
+                      setFormData({ ...formData, product_type, category });
+                    }}
                     className="w-full px-3 py-2 rounded-xl border border-border text-sm text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-accent"
                   >
-                    <option value="Software">Software</option>
-                    <option value="Add-on">Add-on</option>
-                    <option value="Support">Support</option>
-                    <option value="Hardware">Hardware</option>
+                    <option value="software">Software service</option>
+                    <option value="addon">Add-on</option>
+                    <option value="service">Professional service</option>
+                    <option value="physical">Physical item</option>
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-text-primary">Default Base Price</label>
+                  <label className="text-xs font-semibold text-text-primary">Sales Price *</label>
                   <input
-                    type="text"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    required
                     value={formData.default_price}
                     onChange={(e) => setFormData({ ...formData, default_price: e.target.value })}
-                    placeholder="99.00"
                     className="w-full px-3 py-2 rounded-xl border border-border text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
                   />
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-text-primary">Cost Price</label>
+                  <input type="number" min="0" step="0.01" value={formData.cost_price} onChange={(e) => setFormData({ ...formData, cost_price: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-border text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent" />
+                  <p className="text-[11px] text-text-tertiary">Internal only; not shown to customers.</p>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-text-primary">Tax Rate (%)</label>
+                  <input type="number" min="0" max="100" step="0.01" value={formData.tax_rate} onChange={(e) => setFormData({ ...formData, tax_rate: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-border text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent" />
+                </div>
+              </div>
+
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-text-primary">Description</label>
+                <label className="text-xs font-semibold text-text-primary">Customer-facing description</label>
                 <textarea
                   rows={2}
                   value={formData.description}
@@ -324,6 +360,11 @@ export function ProductsPage() {
                   placeholder="Brief summary of capability and audience..."
                   className="w-full px-3 py-2 rounded-xl border border-border text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
                 />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-text-primary">Internal notes</label>
+                <textarea rows={2} value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} placeholder="Internal product notes for the team" className="w-full px-3 py-2 rounded-xl border border-border text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent" />
               </div>
 
               {/* Variants Section */}
@@ -336,6 +377,7 @@ export function ProductsPage() {
                     + Add Variant
                   </Button>
                 </div>
+                <p className="text-[11px] text-text-tertiary">Variant adjustments add to the product sales price. Example: Odoo brand +560.</p>
 
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {formData.variants.map((v, idx) => (
@@ -364,14 +406,15 @@ export function ProductsPage() {
                       />
                       <input
                         type="text"
-                        placeholder="Price"
-                        value={v.price}
+                        placeholder="+ Price"
+                        aria-label={`Price added by ${v.name || `variant ${idx + 1}`}`}
+                        value={v.price_modifier || '0.00'}
                         onChange={(e) => {
                           const updated = [...formData.variants];
-                          updated[idx]!.price = e.target.value;
+                          updated[idx]!.price_modifier = e.target.value;
                           setFormData({ ...formData, variants: updated });
                         }}
-                        className="w-20 px-2.5 py-1.5 rounded-lg border border-border text-xs bg-surface text-text-primary"
+                        className="w-24 px-2.5 py-1.5 rounded-lg border border-border text-xs bg-surface text-text-primary"
                       />
                       {formData.variants.length > 1 && (
                         <button

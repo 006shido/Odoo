@@ -11,8 +11,17 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { BillingFrequency } from '@/types';
+import { CustomerPlansPage } from '@/features/plans/CustomerPlansPage';
+import { StaffPlansPage } from '@/features/plans/StaffPlansPage';
 
 export function PlansPage() {
+  const { currentUser } = useSubscription();
+  if (currentUser.role === 'customer') return <CustomerPlansPage />;
+  if (currentUser.role === 'staff') return <StaffPlansPage />;
+  return <AdminPlansPage />;
+}
+
+function AdminPlansPage() {
   const { plans, products, createPlan, settings } = useSubscription();
   const [frequencyFilter, setFrequencyFilter] = useState<'all' | BillingFrequency>('all');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -28,6 +37,11 @@ export function PlansPage() {
     minimum_quantity: 1,
     allow_pause: true,
     auto_renew: true,
+    start_date: '',
+    end_date: '',
+    auto_close_on_expiry: true,
+    can_close_early: true,
+    can_renew: true,
     description: '',
     featuresText: 'Full API access\nStandard SLA\nEmail support',
   });
@@ -48,6 +62,11 @@ export function PlansPage() {
       minimum_quantity: 1,
       allow_pause: true,
       auto_renew: true,
+      start_date: '',
+      end_date: '',
+      auto_close_on_expiry: true,
+      can_close_early: true,
+      can_renew: true,
       description: '',
       featuresText: 'High performance throughput\nAutomated monthly invoicing\nRole-based access',
     });
@@ -76,6 +95,11 @@ export function PlansPage() {
       status: 'active',
       allow_pause: formData.allow_pause,
       auto_renew: formData.auto_renew,
+      start_date: formData.start_date || undefined,
+      end_date: formData.end_date || undefined,
+      auto_close_on_expiry: formData.auto_close_on_expiry,
+      can_close_early: formData.can_close_early,
+      can_renew: formData.can_renew,
       description: formData.description,
       features: featuresList,
     });
@@ -112,6 +136,18 @@ export function PlansPage() {
             All Frequencies ({plans.length})
           </button>
           <button
+            onClick={() => setFrequencyFilter('daily')}
+            className={cn('apple-segmented-item', frequencyFilter === 'daily' && 'active')}
+          >
+            Daily ({plans.filter((p) => p.frequency === 'daily').length})
+          </button>
+          <button
+            onClick={() => setFrequencyFilter('weekly')}
+            className={cn('apple-segmented-item', frequencyFilter === 'weekly' && 'active')}
+          >
+            Weekly ({plans.filter((p) => p.frequency === 'weekly').length})
+          </button>
+          <button
             onClick={() => setFrequencyFilter('monthly')}
             className={cn('apple-segmented-item', frequencyFilter === 'monthly' && 'active')}
           >
@@ -122,12 +158,6 @@ export function PlansPage() {
             className={cn('apple-segmented-item', frequencyFilter === 'yearly' && 'active')}
           >
             Yearly ({plans.filter((p) => p.frequency === 'yearly').length})
-          </button>
-          <button
-            onClick={() => setFrequencyFilter('weekly')}
-            className={cn('apple-segmented-item', frequencyFilter === 'weekly' && 'active')}
-          >
-            Weekly ({plans.filter((p) => p.frequency === 'weekly').length})
           </button>
         </div>
       </div>
@@ -187,6 +217,12 @@ export function PlansPage() {
                       Setup: {formatCurrency(plan.setup_fee, settings.currency_symbol)}
                     </span>
                   )}
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 border-b border-border/70 py-3 text-[11px] text-text-secondary">
+                  <span>Minimum seats: {plan.minimum_quantity}</span>
+                  <span>Available: {plan.start_date || 'Now'} – {plan.end_date || 'No end date'}</span>
+                  <span>Early close: {plan.can_close_early === false ? 'Not allowed' : 'Allowed'}</span>
+                  <span>Closes at expiry: {plan.auto_close_on_expiry === false ? 'No' : 'Yes'}</span>
                 </div>
 
                 {/* Feature bullets */}
@@ -300,7 +336,22 @@ export function PlansPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 p-3 rounded-xl bg-surface-secondary/50 border border-border/70">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-text-primary">Minimum Quantity</label>
+                  <input type="number" min="1" step="1" required value={formData.minimum_quantity} onChange={(e) => setFormData({ ...formData, minimum_quantity: Number(e.target.value) })} className="w-full px-3 py-2 rounded-xl border border-border text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-text-primary">Available From</label>
+                  <input type="date" value={formData.start_date} onChange={(e) => setFormData({ ...formData, start_date: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-border text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-text-primary">Available Until</label>
+                  <input type="date" min={formData.start_date || undefined} value={formData.end_date} onChange={(e) => setFormData({ ...formData, end_date: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-border text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-surface-secondary/50 border border-border/70">
                 <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-text-primary">
                   <input
                     type="checkbox"
@@ -319,6 +370,18 @@ export function PlansPage() {
                     className="rounded border-border text-accent focus:ring-accent h-4 w-4"
                   />
                   <span>Allow customer pause</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-text-primary">
+                  <input type="checkbox" checked={formData.can_renew} onChange={(e) => setFormData({ ...formData, can_renew: e.target.checked })} className="rounded border-border text-accent focus:ring-accent h-4 w-4" />
+                  <span>Allow renewal</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-text-primary">
+                  <input type="checkbox" checked={formData.auto_close_on_expiry} onChange={(e) => setFormData({ ...formData, auto_close_on_expiry: e.target.checked })} className="rounded border-border text-accent focus:ring-accent h-4 w-4" />
+                  <span>Close automatically at expiry</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-text-primary">
+                  <input type="checkbox" checked={formData.can_close_early} onChange={(e) => setFormData({ ...formData, can_close_early: e.target.checked })} className="rounded border-border text-accent focus:ring-accent h-4 w-4" />
+                  <span>Allow early close</span>
                 </label>
               </div>
 

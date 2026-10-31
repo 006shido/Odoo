@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router';
 import {
   FileText,
   Plus,
@@ -18,6 +19,7 @@ import {
   subtractDecimals,
   multiplyDecimals,
   calculatePercentage,
+  compareDecimals,
 } from '@/lib/decimal';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/shared/status-badge';
@@ -25,6 +27,7 @@ import { cn } from '@/lib/utils';
 import type { Quotation, QuotationStatus } from '@/types';
 
 export function QuotationsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     quotations,
     customers,
@@ -44,6 +47,7 @@ export function QuotationsPage() {
   const [selectedQuote, setSelectedQuote] = useState<Quotation | null>(null);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [builderError, setBuilderError] = useState('');
 
   // Builder state
   const [builderCustomer, setBuilderCustomer] = useState(customers[0]?.id || '');
@@ -65,6 +69,42 @@ export function QuotationsPage() {
       unit_price: plans[0]?.price || '149.00',
     },
   ]);
+
+  const quoteSubtotal = builderLines.reduce(
+    (sum, line) => addDecimals(sum, multiplyDecimals(line.unit_price, line.quantity)),
+    '0.00',
+  );
+  const quoteQuantity = builderLines.reduce((sum, line) => sum + line.quantity, 0);
+  const today = new Date().toISOString().slice(0, 10);
+  const eligibleDiscounts = discounts.filter((discount) =>
+    discount.status === 'active' &&
+    (!discount.start_date || discount.start_date <= today) &&
+    (!discount.end_date || discount.end_date >= today) &&
+    (!discount.usage_limit || discount.usage_count < discount.usage_limit) &&
+    (!discount.min_subtotal || compareDecimals(quoteSubtotal, discount.min_subtotal) >= 0) &&
+    (!discount.minimum_quantity || quoteQuantity >= discount.minimum_quantity) &&
+    (discount.scope !== 'product' || !discount.product_id || builderLines.some((line) => line.product_id === discount.product_id)),
+  );
+
+  useEffect(() => {
+    const requestedPlanId = searchParams.get('plan');
+    if (!requestedPlanId) return;
+
+    const requestedPlan = plans.find((plan) => plan.id === requestedPlanId);
+    if (requestedPlan) {
+      setBuilderLines([{
+        product_id: requestedPlan.product_id,
+        plan_id: requestedPlan.id,
+        quantity: requestedPlan.minimum_quantity,
+        unit_price: requestedPlan.price,
+      }]);
+      setIsCreateOpen(true);
+    }
+
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.delete('plan');
+    setSearchParams(nextSearchParams, { replace: true });
+  }, [plans, searchParams, setSearchParams]);
 
   const filteredQuotes = useMemo(() => {
     return quotations.filter((q) => {
@@ -88,15 +128,22 @@ export function QuotationsPage() {
     if (builderDiscount) {
       const disc = discounts.find((d) => d.id === builderDiscount);
       if (disc) {
+        const eligibleLines = disc.scope === 'product' && disc.product_id
+          ? builderLines.filter((line) => line.product_id === disc.product_id)
+          : builderLines;
+        const discountBase = eligibleLines.reduce(
+          (sum, line) => addDecimals(sum, multiplyDecimals(line.unit_price, line.quantity)),
+          '0.00',
+        );
         if (disc.type === 'percentage') {
-          discountAmt = calculatePercentage(subtotal, disc.value);
+          discountAmt = calculatePercentage(discountBase, disc.value);
         } else {
-          discountAmt = disc.value;
+          discountAmt = compareDecimals(disc.value, discountBase) > 0 ? discountBase : disc.value;
         }
       }
     }
 
-    const discountedSubtotal = subtractDecimals(subtotal, discountAmt);
+    const discountedSubtotal = compareDecimals(subtotal, discountAmt) > 0 ? subtractDecimals(subtotal, discountAmt) : '0.00';
     const taxAmt = calculatePercentage(discountedSubtotal, settings.default_tax_rate);
     const total = addDecimals(discountedSubtotal, taxAmt);
 
@@ -146,17 +193,20 @@ export function QuotationsPage() {
   const handleCreateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!builderCustomer || builderLines.length === 0) return;
-
-    createQuotation({
-      customer_id: builderCustomer,
-      items: builderLines,
-      discount_id: builderDiscount || undefined,
-      payment_terms: builderTerms,
-      expiry_date: builderExpiry,
-      notes: builderNotes,
-    });
-
-    setIsCreateOpen(false);
+    setBuilderError('');
+    try {
+      createQuotation({
+        customer_id: builderCustomer,
+        items: builderLines,
+        discount_id: builderDiscount || undefined,
+        payment_terms: builderTerms,
+        expiry_date: builderExpiry,
+        notes: builderNotes,
+      });
+      setIsCreateOpen(false);
+    } catch (error) {
+      setBuilderError(error instanceof Error ? error.message : 'Could not create the quotation. Please review the details.');
+    }
   };
 
   const handleConvert = (quote: Quotation) => {
@@ -181,7 +231,7 @@ export function QuotationsPage() {
           </p>
         </div>
 
-        <Button onClick={() => setIsCreateOpen(true)} className="rounded-xl shadow-xs">
+        <Button onClick={() => { setBuilderError(''); setIsCreateOpen(true); }} className="rounded-xl shadow-xs">
           <Plus className="h-4 w-4 mr-1.5" />
           Create Quotation
         </Button>
@@ -634,12 +684,15 @@ export function QuotationsPage() {
                     className="w-full px-3 py-2 rounded-xl border border-border text-sm text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-accent"
                   >
                     <option value="">No Discount Applied</option>
-                    {discounts.map((d) => (
+                    {eligibleDiscounts.map((d) => (
                       <option key={d.id} value={d.id}>
                         {d.code} — {d.name} ({d.type === 'percentage' ? `${d.value}%` : `$${d.value}`})
                       </option>
                     ))}
                   </select>
+                  {builderDiscount && !eligibleDiscounts.some((discount) => discount.id === builderDiscount) && (
+                    <p className="text-xs text-amber-700">This discount no longer meets the quote requirements. Choose another one or remove it.</p>
+                  )}
                 </div>
               </div>
 
@@ -767,6 +820,7 @@ export function QuotationsPage() {
               </div>
 
               <div className="mt-6 flex items-center justify-end gap-3 pt-3 border-t border-border/80">
+                {builderError && <p role="alert" className="mr-auto text-xs font-medium text-red-600">{builderError}</p>}
                 <Button type="button" variant="outline" size="sm" onClick={() => setIsCreateOpen(false)} className="rounded-xl">
                   Cancel
                 </Button>

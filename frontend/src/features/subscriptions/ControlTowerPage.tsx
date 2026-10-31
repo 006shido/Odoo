@@ -28,7 +28,7 @@ export function ControlTowerPage() {
     runBillingEngine,
     billingRuns,
     resumeSubscription,
-    renewSubscription,
+    setSubscriptionAutoRenew,
   } = useSubscription();
 
   const [activeTab, setActiveTab] = useState<'all' | 'renewals' | 'overdue' | 'paused' | 'billing'>('all');
@@ -340,15 +340,15 @@ export function ControlTowerPage() {
                           {sub.next_billing_date}
                         </p>
                       </div>
-                      <Button
+                      {!sub.auto_renew && sub.can_renew !== false && <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => renewSubscription(sub.id)}
+                        onClick={() => setSubscriptionAutoRenew(sub.id, true)}
                         className="rounded-xl"
                       >
                         <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
-                        Renew Cycle
-                      </Button>
+                        Enable auto-renew
+                      </Button>}
                     </div>
                   </div>
                 ))

@@ -22,12 +22,13 @@ import {
   CheckCircle2,
   AlertTriangle,
   Info,
+  LogOut,
 } from 'lucide-react';
 import { useSubscription } from '@/lib/store/subscriptionStore';
 import { useTheme } from '@/lib/theme';
 import { CommandPalette } from '@/components/shared/command-palette';
 import { cn } from '@/lib/utils';
-import type { UserRole } from '@/types';
+import { api } from '@/lib/api';
 
 export function AppShell() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -36,7 +37,6 @@ export function AppShell() {
 
   const {
     currentUser,
-    switchRole,
     notifications,
     markNotificationAsRead,
     clearAllNotifications,
@@ -48,6 +48,12 @@ export function AppShell() {
   const { isDark, toggleTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    localStorage.removeItem('brightloop_session');
+    try { await api.post('/auth/logout/'); } catch { /* the local demo session is already cleared */ }
+    navigate('/login', { replace: true });
+  };
 
   // Badges calculation
   const overdueCount = invoices.filter((i) => i.is_overdue || (i.status === 'issued' && i.due_date < '2026-10-31')).length;
@@ -109,12 +115,24 @@ export function AppShell() {
     },
   ];
 
+  const visibleNavigationSections = currentUser.role === 'customer'
+    ? [{ title: 'Your account', items: [
+        { name: 'Explore plans', path: '/plans', icon: Sparkles },
+        { name: 'My subscriptions & billing', path: '/portal', icon: ExternalLink },
+      ] }]
+    : navigationSections
+        .map((section) => ({
+          ...section,
+          items: section.items.filter((item) => currentUser.role === 'admin' || !['/products', '/discounts', '/reports', '/settings'].includes(item.path)),
+        }))
+        .filter((section) => section.items.length > 0);
+
   const getPageTitle = () => {
     const p = location.pathname;
     if (p.includes('/control-tower')) return 'Control Tower';
     if (p.includes('/customers')) return 'Customers';
     if (p.includes('/products')) return 'Products';
-    if (p.includes('/plans')) return 'Plans';
+    if (p.includes('/plans')) return currentUser.role === 'customer' ? 'Explore plans' : 'Plans';
     if (p.includes('/quotations')) return 'Quotations';
     if (p.includes('/subscriptions')) return 'Subscriptions';
     if (p.includes('/invoices')) return 'Invoices';
@@ -171,7 +189,7 @@ export function AppShell() {
 
         {/* Navigation links */}
         <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
-          {navigationSections.map((section) => (
+          {visibleNavigationSections.map((section) => (
             <div key={section.title}>
               <p className="px-2.5 text-[11px] font-semibold uppercase tracking-wider text-text-tertiary mb-1.5">
                 {section.title}
@@ -210,31 +228,8 @@ export function AppShell() {
           ))}
         </div>
 
-        {/* User profile and role switcher in footer */}
-        <div className="p-3 border-t border-border bg-surface-secondary/40 space-y-2.5">
-          <div className="flex items-center justify-between px-1">
-            <span className="text-[11px] text-text-tertiary font-medium">Role:</span>
-            <div className="flex items-center gap-1 bg-surface border border-border p-0.5 rounded-md">
-              {(['admin', 'staff', 'customer'] as UserRole[]).map((r) => (
-                <button
-                  key={r}
-                  onClick={() => {
-                    switchRole(r);
-                    if (r === 'customer') navigate('/portal');
-                  }}
-                  className={cn(
-                    'px-2 py-0.5 rounded text-[11px] font-medium capitalize transition-colors',
-                    currentUser.role === r
-                      ? 'bg-accent text-white'
-                      : 'text-text-secondary hover:text-text-primary',
-                  )}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
-          </div>
-
+        {/* User profile and sign out */}
+        <div className="p-3 border-t border-border bg-surface-secondary/40 space-y-3">
           <div className="flex items-center gap-2.5 px-1 pt-1">
             <div className="h-7 w-7 rounded-full bg-accent/15 text-accent font-semibold text-xs flex items-center justify-center shrink-0">
               {currentUser.first_name[0]}
@@ -243,11 +238,14 @@ export function AppShell() {
               <span className="text-xs font-medium text-text-primary truncate">
                 {currentUser.first_name} {currentUser.last_name}
               </span>
-              <span className="text-[11px] text-text-tertiary truncate">
-                {currentUser.email}
+              <span className="text-[11px] text-text-tertiary truncate capitalize">
+                {currentUser.role} · {currentUser.email}
               </span>
             </div>
           </div>
+          <button type="button" onClick={handleSignOut} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium text-text-secondary transition hover:bg-surface hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+            <LogOut className="h-3.5 w-3.5" /> Sign out
+          </button>
         </div>
       </aside>
 
@@ -270,8 +268,9 @@ export function AppShell() {
 
           {/* Right Header Actions */}
           <div className="flex items-center gap-2">
-            {/* Search Button */}
-            <button
+            {currentUser.role !== 'customer' && <>
+              {/* Search Button */}
+              <button
               onClick={() => setPaletteOpen(true)}
               aria-label="Search anything"
               className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface/60 hover:bg-surface/80 dark:bg-surface/40 backdrop-blur-md border border-border/80 text-xs text-text-secondary hover:text-text-primary transition-all shadow-2xs"
@@ -281,10 +280,10 @@ export function AppShell() {
               <kbd className="hidden sm:inline text-[10px] bg-surface px-1 py-0.5 rounded border border-border text-text-tertiary font-mono">
                 ⌘K
               </kbd>
-            </button>
+              </button>
 
-            {/* Notifications */}
-            <div className="relative">
+              {/* Notifications */}
+              <div className="relative">
               <button
                 onClick={() => setNotifOpen(!notifOpen)}
                 aria-label="Notifications"
@@ -365,7 +364,8 @@ export function AppShell() {
                   </div>
                 </>
               )}
-            </div>
+              </div>
+            </>}
 
             {/* Dark/Light mode toggle */}
             <button

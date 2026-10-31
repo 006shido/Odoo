@@ -16,6 +16,7 @@ import type {
   AuditLogItem,
   AuthUser,
   UserRole,
+  BillingFrequency,
   QuotationItem,
   SubscriptionItem,
   InvoiceItem,
@@ -27,6 +28,24 @@ import {
   calculatePercentage,
   compareDecimals,
 } from '@/lib/decimal';
+
+function addBillingInterval(value: string | Date, frequency: BillingFrequency): string {
+  const date = value instanceof Date ? new Date(value) : new Date(`${value}T00:00:00Z`);
+  const originalDay = date.getUTCDate();
+
+  if (frequency === 'daily') date.setUTCDate(date.getUTCDate() + 1);
+  else if (frequency === 'weekly') date.setUTCDate(date.getUTCDate() + 7);
+  else {
+    const monthDelta = frequency === 'yearly' ? 12 : 1;
+    const targetMonth = date.getUTCMonth() + monthDelta;
+    date.setUTCDate(1);
+    date.setUTCMonth(targetMonth);
+    const lastDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).getUTCDate();
+    date.setUTCDate(Math.min(originalDay, lastDay));
+  }
+
+  return date.toISOString().slice(0, 10);
+}
 
 // Default initial workspace settings
 const initialSettings: WorkspaceSettings = {
@@ -1103,7 +1122,7 @@ export interface SubscriptionContextType {
   activateSubscription: (id: string) => void;
   pauseSubscription: (id: string, reason: string) => void;
   resumeSubscription: (id: string) => void;
-  renewSubscription: (id: string) => void;
+  setSubscriptionAutoRenew: (id: string, enabled: boolean) => void;
   closeSubscription: (id: string) => void;
   invoices: Invoice[];
   billingRuns: BillingRun[];
@@ -1368,6 +1387,20 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   }): Quotation => {
     const customer = customers.find((c) => c.id === data.customer_id);
     if (!customer) throw new Error('Customer not found');
+    const issueDate = new Date().toISOString().split('T')[0]!;
+    if (!data.items.length || data.items.some((item) => item.quantity < 1 || compareDecimals(item.unit_price, '0.00') < 0)) {
+      throw new Error('Add at least one valid line item with a positive quantity.');
+    }
+    if (data.expiry_date < issueDate) throw new Error('A quotation expiry date must be today or later.');
+    for (const item of data.items) {
+      if (!products.some((product) => product.id === item.product_id)) throw new Error('A selected product is no longer available.');
+      if (item.plan_id) {
+        const plan = plans.find((candidate) => candidate.id === item.plan_id);
+        if (!plan || plan.product_id !== item.product_id || plan.status !== 'active') throw new Error('A selected plan is no longer available.');
+        if ((plan.start_date && issueDate < plan.start_date) || (plan.end_date && issueDate > plan.end_date)) throw new Error(`${plan.name} is outside its availability dates.`);
+        if (item.quantity < plan.minimum_quantity) throw new Error(`${plan.name} requires a minimum quantity of ${plan.minimum_quantity}.`);
+      }
+    }
 
     const nextNum = (quotations.length + 1).toString().padStart(3, '0');
     const quoteNumber = `${settings.quotation_prefix}2026-${nextNum}`;
@@ -1394,14 +1427,31 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     let discountCode: string | undefined;
     if (data.discount_id) {
       const disc = discounts.find((d) => d.id === data.discount_id);
-      if (disc && disc.status === 'active') {
-        discountCode = disc.code;
-        if (disc.type === 'percentage') {
-          discountAmount = calculatePercentage(subtotal, disc.value);
-        } else {
-          discountAmount = disc.value;
-        }
+      if (!disc || disc.status !== 'active') throw new Error('This discount is no longer active.');
+      const today = new Date().toISOString().split('T')[0]!;
+      if ((disc.start_date && today < disc.start_date) || (disc.end_date && today > disc.end_date)) {
+        throw new Error('This discount is outside its valid dates.');
       }
+      if (disc.usage_limit && disc.usage_count >= disc.usage_limit) throw new Error('This discount has reached its usage limit.');
+      if (disc.min_subtotal && compareDecimals(subtotal, disc.min_subtotal) < 0) {
+        throw new Error(`This discount requires a minimum subtotal of ${settings.currency} ${disc.min_subtotal}.`);
+      }
+      const totalQuantity = quoteItems.reduce((sum, item) => sum + item.quantity, 0);
+      if (disc.minimum_quantity && totalQuantity < disc.minimum_quantity) {
+        throw new Error(`Add at least ${disc.minimum_quantity} items to use this discount.`);
+      }
+      const eligibleItems = disc.scope === 'product' && disc.product_id
+        ? quoteItems.filter((item) => item.product_id === disc.product_id)
+        : quoteItems;
+      if (!eligibleItems.length) throw new Error('This discount does not apply to the selected products.');
+      const discountBase = eligibleItems.reduce((sum, item) => addDecimals(sum, item.amount), '0.00');
+      discountCode = disc.code;
+      discountAmount = disc.type === 'percentage'
+        ? calculatePercentage(discountBase, disc.value)
+        : (compareDecimals(disc.value, discountBase) > 0 ? discountBase : disc.value);
+      setDiscountsState((prev) => prev.map((item) => item.id === disc.id
+        ? { ...item, usage_count: item.usage_count + 1 }
+        : item));
     }
 
     const discountedSubtotal = compareDecimals(subtotal, discountAmount) > 0
@@ -1441,15 +1491,28 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   };
 
   const sendQuotation = (id: string) => {
+    const quote = quotations.find((item) => item.id === id);
+    const today = new Date().toISOString().slice(0, 10);
+    if (!quote || quote.status !== 'draft') return;
+    if (quote.expiry_date < today) {
+      addNotification('Quotation expired', `${quote.number} has expired. Update its expiry date before sending.`, 'error', '/quotations');
+      return;
+    }
     setQuotationsState((prev) =>
       prev.map((q) => (q.id === id ? { ...q, status: 'sent', updated_at: new Date().toISOString() } : q)),
     );
-    const quote = quotations.find((q) => q.id === id);
     addAuditLog('SEND_QUOTATION', 'QUOTATION', id, `Sent quotation ${quote?.number} to customer`);
     addNotification('Quotation Sent', `Quotation ${quote?.number} sent to ${quote?.customer_email}`, 'info', '/quotations');
   };
 
   const acceptQuotation = (id: string, acceptedBy?: string) => {
+    const quote = quotations.find((item) => item.id === id);
+    const today = new Date().toISOString().slice(0, 10);
+    if (!quote || !['draft', 'sent'].includes(quote.status)) return;
+    if (quote.expiry_date < today) {
+      addNotification('Quotation expired', `${quote.number} is past its expiry date and can no longer be accepted.`, 'error', '/portal');
+      return;
+    }
     const actor = acceptedBy || `${currentUser.first_name} ${currentUser.last_name}`;
     setQuotationsState((prev) =>
       prev.map((q) =>
@@ -1464,7 +1527,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
           : q,
       ),
     );
-    const quote = quotations.find((q) => q.id === id);
     addAuditLog('ACCEPT_QUOTATION', 'QUOTATION', id, `Quotation ${quote?.number} accepted by ${actor}`);
     addNotification('Quotation Accepted', `${quote?.number} has been officially accepted! Ready to convert.`, 'success', '/quotations');
   };
@@ -1490,23 +1552,26 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       return { subscription: null, error: 'Only accepted quotations can be converted to subscriptions.' };
     }
 
+    const matchedPlan = plans.find((p) => p.id === quote.items[0]?.plan_id);
+    if (!matchedPlan) return { subscription: null, error: 'This quotation has no subscription plan to activate.' };
+
     const nextSubNum = (subscriptions.length + 1).toString().padStart(3, '0');
     const subNumber = `${settings.subscription_prefix}2026-${nextSubNum}`;
     const today = new Date().toISOString().split('T')[0]!;
-
-    const nextDate = new Date();
-    nextDate.setMonth(nextDate.getMonth() + 1);
-    const nextBillingDate = nextDate.toISOString().split('T')[0]!;
+    if (quote.expiry_date < today) return { subscription: null, error: 'This quotation has expired and cannot be converted.' };
+    if (matchedPlan.status !== 'active' || (matchedPlan.start_date && today < matchedPlan.start_date) || (matchedPlan.end_date && today > matchedPlan.end_date)) {
+      return { subscription: null, error: 'The plan in this quotation is no longer available.' };
+    }
+    const nextBillingDate = addBillingInterval(today, matchedPlan.frequency);
 
     const subItems: SubscriptionItem[] = quote.items.map((qi, idx) => ({
       id: `sitem-${Date.now()}-${idx}`,
+      product_id: qi.product_id,
       product_name: qi.product_name,
       quantity: qi.quantity,
       unit_price: qi.unit_price,
       amount: qi.amount,
     }));
-
-    const matchedPlan = plans.find((p) => p.id === quote.items[0]?.plan_id) || plans[0]!;
 
     const newSub: Subscription = {
       id: `sub-${Date.now()}`,
@@ -1528,7 +1593,22 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       tax_rate: quote.tax_rate,
       tax_amount: quote.tax_amount,
       total_recurring: quote.total,
-      auto_renew: true,
+      auto_renew: matchedPlan.auto_renew,
+      can_pause: matchedPlan.allow_pause,
+      can_close_early: matchedPlan.can_close_early ?? true,
+      can_renew: matchedPlan.can_renew ?? true,
+      discount_id: quote.discount_id,
+      discount_code: quote.discount_code,
+      discount_type: discounts.find((d) => d.id === quote.discount_id)?.type,
+      discount_value: discounts.find((d) => d.id === quote.discount_id)?.value,
+      discount_start_date: discounts.find((d) => d.id === quote.discount_id)?.start_date,
+      discount_end_date: discounts.find((d) => d.id === quote.discount_id)?.end_date,
+      discount_min_subtotal: discounts.find((d) => d.id === quote.discount_id)?.min_subtotal,
+      discount_minimum_quantity: discounts.find((d) => d.id === quote.discount_id)?.minimum_quantity,
+      discount_scope: discounts.find((d) => d.id === quote.discount_id)?.scope,
+      discount_product_id: discounts.find((d) => d.id === quote.discount_id)?.product_id,
+      discount_usage_limit: discounts.find((d) => d.id === quote.discount_id)?.usage_limit,
+      discount_usage_count: discounts.find((d) => d.id === quote.discount_id)?.usage_count,
       events: [
         {
           id: `ev-${Date.now()}-1`,
@@ -1631,19 +1711,19 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     const customer = customers.find((c) => c.id === data.customer_id);
     const plan = plans.find((p) => p.id === data.plan_id);
     if (!customer || !plan) throw new Error('Customer or Plan not found');
+    if (plan.status !== 'active' || (plan.start_date && data.start_date < plan.start_date) || (plan.end_date && data.start_date > plan.end_date)) {
+      throw new Error('The selected plan is not available on the subscription start date.');
+    }
 
     const nextSubNum = (subscriptions.length + 1).toString().padStart(3, '0');
     const subNumber = `${settings.subscription_prefix}2026-${nextSubNum}`;
 
-    const startDate = new Date(data.start_date);
-    const nextDate = new Date(startDate);
-    if (plan.frequency === 'daily') nextDate.setDate(nextDate.getDate() + 1);
-    else if (plan.frequency === 'weekly') nextDate.setDate(nextDate.getDate() + 7);
-    else if (plan.frequency === 'yearly') nextDate.setFullYear(nextDate.getFullYear() + 1);
-    else nextDate.setMonth(nextDate.getMonth() + 1);
+    const nextBillingDate = addBillingInterval(data.start_date, plan.frequency);
 
-    const taxAmount = calculatePercentage(plan.price, settings.default_tax_rate);
-    const totalRecurring = addDecimals(plan.price, taxAmount);
+    const quantity = Math.max(1, plan.minimum_quantity || 1);
+    const recurringAmount = multiplyDecimals(plan.price, quantity);
+    const taxAmount = calculatePercentage(recurringAmount, settings.default_tax_rate);
+    const totalRecurring = addDecimals(recurringAmount, taxAmount);
 
     const newSub: Subscription = {
       id: `sub-${Date.now()}`,
@@ -1656,23 +1736,27 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       frequency: plan.frequency,
       status: 'active',
       start_date: data.start_date,
-      next_billing_date: nextDate.toISOString().split('T')[0]!,
+      next_billing_date: nextBillingDate,
       last_billing_date: data.start_date,
       source_quotation_id: data.source_quotation_id,
       items: [
         {
           id: `sitem-${Date.now()}`,
+          product_id: plan.product_id,
           product_name: `${plan.product_name} - ${plan.name}`,
-          quantity: 1,
+          quantity,
           unit_price: plan.price,
-          amount: plan.price,
+          amount: recurringAmount,
         },
       ],
-      recurring_amount: plan.price,
+      recurring_amount: recurringAmount,
       tax_rate: settings.default_tax_rate,
       tax_amount: taxAmount,
       total_recurring: totalRecurring,
-      auto_renew: data.auto_renew ?? true,
+      auto_renew: data.auto_renew ?? plan.auto_renew,
+      can_pause: plan.allow_pause,
+      can_close_early: plan.can_close_early ?? true,
+      can_renew: plan.can_renew ?? true,
       events: [
         {
           id: `ev-${Date.now()}`,
@@ -1715,6 +1799,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   };
 
   const pauseSubscription = (id: string, reason: string) => {
+    const subscription = subscriptions.find((item) => item.id === id);
+    if (!subscription || subscription.status !== 'active' || subscription.can_pause === false) return;
     setSubscriptionsState((prev) =>
       prev.map((s) => {
         if (s.id !== id) return s;
@@ -1739,29 +1825,27 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   };
 
   const resumeSubscription = (id: string) => {
+    const subscription = subscriptions.find((item) => item.id === id);
+    if (!subscription || subscription.status !== 'paused') return;
     setSubscriptionsState((prev) =>
       prev.map((s) => {
         if (s.id !== id) return s;
         const today = new Date().toISOString().split('T')[0]!;
-        const nextDate = new Date();
-        if (s.frequency === 'daily') nextDate.setDate(nextDate.getDate() + 1);
-        else if (s.frequency === 'weekly') nextDate.setDate(nextDate.getDate() + 7);
-        else if (s.frequency === 'yearly') nextDate.setFullYear(nextDate.getFullYear() + 1);
-        else nextDate.setMonth(nextDate.getMonth() + 1);
+        const nextBillingDate = addBillingInterval(today, s.frequency);
 
         const newEvent: SubscriptionEvent = {
           id: `ev-${Date.now()}`,
           event_type: 'resumed',
           actor: `${currentUser.first_name} ${currentUser.last_name}`,
           timestamp: new Date().toISOString(),
-          notes: `Resumed from pause. Next billing date set to ${nextDate.toISOString().split('T')[0]}`,
+          notes: `Resumed from pause. Next billing date set to ${nextBillingDate}`,
         };
         return {
           ...s,
           status: 'active',
           pause_reason: undefined,
           last_billing_date: today,
-          next_billing_date: nextDate.toISOString().split('T')[0]!,
+          next_billing_date: nextBillingDate,
           events: [newEvent, ...s.events],
           updated_at: new Date().toISOString(),
         };
@@ -1771,34 +1855,33 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     addNotification('Subscription Resumed', 'Subscription is active. Next billing cycle set.', 'success');
   };
 
-  const renewSubscription = (id: string) => {
-    setSubscriptionsState((prev) =>
-      prev.map((s) => {
-        if (s.id !== id) return s;
-        const currentNext = new Date(s.next_billing_date);
-        if (s.frequency === 'yearly') currentNext.setFullYear(currentNext.getFullYear() + 1);
-        else currentNext.setMonth(currentNext.getMonth() + 1);
+  const setSubscriptionAutoRenew = (id: string, enabled: boolean) => {
+    const subscription = subscriptions.find((item) => item.id === id);
+    if (!subscription || subscription.status !== 'active' || subscription.can_renew === false) return;
+    const customer = customers.find((item) => item.id === subscription.customer_id);
+    if (currentUser.role === 'customer' && customer?.email.toLowerCase() !== currentUser.email.toLowerCase()) return;
 
-        const newEvent: SubscriptionEvent = {
-          id: `ev-${Date.now()}`,
-          event_type: 'renewed',
-          actor: `${currentUser.first_name} ${currentUser.last_name}`,
-          timestamp: new Date().toISOString(),
-          notes: `Manually renewed. Extended to ${currentNext.toISOString().split('T')[0]}`,
-        };
-        return {
-          ...s,
-          next_billing_date: currentNext.toISOString().split('T')[0]!,
-          events: [newEvent, ...s.events],
-          updated_at: new Date().toISOString(),
-        };
-      }),
-    );
-    addAuditLog('RENEW_SUBSCRIPTION', 'SUBSCRIPTION', id, 'Manually renewed subscription cycle');
-    addNotification('Subscription Renewed', 'Billing cycle advanced successfully.', 'success');
+    setSubscriptionsState((prev) => prev.map((item) => item.id === id ? {
+      ...item,
+      auto_renew: enabled,
+      events: [{
+        id: `ev-${Date.now()}`,
+        event_type: 'renewed',
+        actor: `${currentUser.first_name} ${currentUser.last_name}`,
+        timestamp: new Date().toISOString(),
+        notes: enabled ? 'Automatic renewal enabled.' : 'Automatic renewal disabled; service remains active through the current period.',
+      }, ...item.events],
+      updated_at: new Date().toISOString(),
+    } : item));
+    addAuditLog(enabled ? 'ENABLE_AUTO_RENEW' : 'DISABLE_AUTO_RENEW', 'SUBSCRIPTION', id, `Automatic renewal ${enabled ? 'enabled' : 'disabled'}`);
+    addNotification(enabled ? 'Auto-renew enabled' : 'Auto-renew disabled', enabled
+      ? 'This subscription will renew on its next billing date.'
+      : 'Your service remains active through the current billing period.', enabled ? 'success' : 'info');
   };
 
   const closeSubscription = (id: string) => {
+    const subscription = subscriptions.find((item) => item.id === id);
+    if (!subscription || subscription.status === 'closed' || subscription.can_close_early === false) return;
     setSubscriptionsState((prev) =>
       prev.map((s) => {
         if (s.id !== id) return s;
@@ -1832,6 +1915,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     log.push(`[${new Date().toISOString()}] Billing run initialized for target date: ${runDate}`);
 
     const newInvoices: Invoice[] = [];
+    const discountUsesThisRun = new Map<string, number>();
     const updatedSubscriptions: Subscription[] = subscriptions.map((sub) => {
       if (sub.status !== 'active') {
         return sub;
@@ -1845,13 +1929,21 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         return sub;
       }
 
+      if (!sub.auto_renew || sub.can_renew === false) {
+        const expiredEvent: SubscriptionEvent = {
+          id: `ev-${Date.now()}-${newInvoices.length}`,
+          event_type: 'expired',
+          actor: 'System (Billing Engine)',
+          timestamp: new Date().toISOString(),
+          notes: 'Subscription reached its renewal date without renewal enabled.',
+        };
+        log.push(`[EXPIRED] Subscription ${sub.number} reached its renewal date without auto-renewal.`);
+        skipped++;
+        return { ...sub, status: 'expired', events: [expiredEvent, ...sub.events], updated_at: new Date().toISOString() };
+      }
+
       const periodStart = sub.next_billing_date;
-      const periodEndDateObj = new Date(periodStart);
-      if (sub.frequency === 'daily') periodEndDateObj.setDate(periodEndDateObj.getDate() + 1);
-      else if (sub.frequency === 'weekly') periodEndDateObj.setDate(periodEndDateObj.getDate() + 7);
-      else if (sub.frequency === 'yearly') periodEndDateObj.setFullYear(periodEndDateObj.getFullYear() + 1);
-      else periodEndDateObj.setMonth(periodEndDateObj.getMonth() + 1);
-      const periodEnd = periodEndDateObj.toISOString().split('T')[0]!;
+      const periodEnd = addBillingInterval(periodStart, sub.frequency);
 
       const alreadyInvoiced = invoices.some(
         (inv) => inv.subscription_id === sub.id && inv.billing_period_start === periodStart,
@@ -1876,6 +1968,37 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         amount: item.amount,
       }));
 
+      const discount = sub.discount_id ? discounts.find((item) => item.id === sub.discount_id) : undefined;
+      const matchingItems = sub.discount_scope === 'product' && sub.discount_product_id
+        ? sub.items.filter((item) => item.product_id === sub.discount_product_id)
+        : sub.items;
+      const discountBase = matchingItems.reduce((sum, item) => addDecimals(sum, item.amount), '0.00');
+      const quantity = matchingItems.reduce((sum, item) => sum + item.quantity, 0);
+      const runUsageCount = discount ? (discountUsesThisRun.get(discount.id) ?? 0) : 0;
+      const totalUsageCount = discount ? discount.usage_count + runUsageCount : 0;
+      const discountValid = Boolean(
+        discount &&
+        discount.status === 'active' &&
+        (!sub.discount_start_date || runDate >= sub.discount_start_date) &&
+        (!sub.discount_end_date || runDate <= sub.discount_end_date) &&
+        (!sub.discount_usage_limit || totalUsageCount < sub.discount_usage_limit) &&
+        (!sub.discount_min_subtotal || compareDecimals(sub.recurring_amount, sub.discount_min_subtotal) >= 0) &&
+        (!sub.discount_minimum_quantity || quantity >= sub.discount_minimum_quantity) &&
+        compareDecimals(discountBase, '0.00') > 0,
+      );
+      let discountAmount = '0.00';
+      if (discountValid && sub.discount_type && sub.discount_value) {
+        discountAmount = sub.discount_type === 'percentage'
+          ? calculatePercentage(discountBase, sub.discount_value)
+          : (compareDecimals(sub.discount_value, discountBase) > 0 ? discountBase : sub.discount_value);
+        if (discount) discountUsesThisRun.set(discount.id, runUsageCount + 1);
+      }
+      const invoicedSubtotal = compareDecimals(sub.recurring_amount, discountAmount) > 0
+        ? subtractDecimals(sub.recurring_amount, discountAmount)
+        : '0.00';
+      const invoicedTax = calculatePercentage(invoicedSubtotal, sub.tax_rate);
+      const invoiceTotal = addDecimals(invoicedSubtotal, invoicedTax);
+
       const newInv: Invoice = {
         id: `inv-${Date.now()}-${newInvoices.length}`,
         number: invoiceNumber,
@@ -1892,20 +2015,22 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         due_date: dueDateObj.toISOString().split('T')[0]!,
         items: invoiceItems,
         subtotal: sub.recurring_amount,
-        discount_amount: '0.00',
+        discount_amount: discountAmount,
         tax_rate: sub.tax_rate,
-        tax_amount: sub.tax_amount,
-        total: sub.total_recurring,
+        tax_amount: invoicedTax,
+        total: invoiceTotal,
         paid_amount: '0.00',
-        balance_due: sub.total_recurring,
-        notes: `Automated recurring invoice generated for ${sub.frequency} cycle.`,
+        balance_due: invoiceTotal,
+        notes: discountAmount !== '0.00'
+          ? `Automated recurring invoice generated for ${sub.frequency} cycle. Discount ${sub.discount_code} applied.`
+          : `Automated recurring invoice generated for ${sub.frequency} cycle.`,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
 
       newInvoices.push(newInv);
       created++;
-      log.push(`[SUCCESS] Generated Invoice ${invoiceNumber} ($${sub.total_recurring}) for ${sub.customer_name} (${sub.number}).`);
+      log.push(`[SUCCESS] Generated Invoice ${invoiceNumber} ($${invoiceTotal}) for ${sub.customer_name} (${sub.number}).`);
 
       const newNextBilling = periodEnd;
       const billedEvent: SubscriptionEvent = {
@@ -1920,14 +2045,23 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         ...sub,
         last_billing_date: runDate,
         next_billing_date: newNextBilling,
+        tax_amount: invoicedTax,
+        total_recurring: invoiceTotal,
+        discount_usage_count: (sub.discount_usage_count ?? 0) + (discountAmount !== '0.00' ? 1 : 0),
         events: [billedEvent, ...sub.events],
         updated_at: new Date().toISOString(),
       };
     });
 
+    setSubscriptionsState(updatedSubscriptions);
     if (newInvoices.length > 0) {
       setInvoicesState((prev) => [...newInvoices, ...prev]);
-      setSubscriptionsState(updatedSubscriptions);
+      if (discountUsesThisRun.size) {
+        setDiscountsState((prev) => prev.map((discount) => ({
+          ...discount,
+          usage_count: discount.usage_count + (discountUsesThisRun.get(discount.id) ?? 0),
+        })));
+      }
     }
 
     log.push(`[SUMMARY] Checked ${processed} active subscriptions. Created ${created} invoices. Skipped ${skipped}. Errors: ${errors}.`);
@@ -2151,7 +2285,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         activateSubscription,
         pauseSubscription,
         resumeSubscription,
-        renewSubscription,
+        setSubscriptionAutoRenew,
         closeSubscription,
         invoices,
         billingRuns,

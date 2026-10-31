@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { SubscriptionProvider } from '@/lib/store/subscriptionStore';
@@ -21,6 +21,8 @@ import { ReportsPage } from '@/features/reports/ReportsPage';
 import { CustomerPortalPage } from '@/features/portal/CustomerPortalPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { WelcomePage } from '@/app/pages/WelcomePage';
+import { LoginPage } from '@/app/pages/LoginPage';
+import { useSubscription } from '@/lib/store/subscriptionStore';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,10 +44,12 @@ export function App() {
               <BrowserRouter>
                 <Routes>
                   {/* Public Welcome / Design System Preview */}
+                  <Route path="/" element={<HomeRoute />} />
                   <Route path="/welcome" element={<WelcomePage />} />
+                  <Route path="/login" element={<LoginPage />} />
 
                   {/* Authenticated Application Shell */}
-                  <Route element={<AppShell />}>
+                  <Route element={<AuthenticatedShell />}>
                     <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/control-tower" element={<ControlTowerPage />} />
                     <Route path="/customers" element={<CustomersPage />} />
@@ -59,7 +63,6 @@ export function App() {
                     <Route path="/reports" element={<ReportsPage />} />
                     <Route path="/portal" element={<CustomerPortalPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
-                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
                     <Route path="*" element={<Navigate to="/dashboard" replace />} />
                   </Route>
                 </Routes>
@@ -70,4 +73,27 @@ export function App() {
       </ThemeProvider>
     </QueryClientProvider>
   );
+}
+
+function HomeRoute() {
+  const { currentUser } = useSubscription();
+  const isSignedIn = localStorage.getItem('brightloop_session') === 'active';
+  if (!isSignedIn) return <WelcomePage />;
+  return <Navigate to={currentUser.role === 'customer' ? '/plans' : '/dashboard'} replace />;
+}
+
+function AuthenticatedShell() {
+  const { currentUser } = useSubscription();
+  const location = useLocation();
+  const isSignedIn = localStorage.getItem('brightloop_session') === 'active';
+
+  if (!isSignedIn) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  if (currentUser.role === 'customer' && !['/plans', '/portal'].includes(location.pathname)) {
+    return <Navigate to="/plans" replace />;
+  }
+  if (currentUser.role === 'staff' && ['/products', '/discounts', '/reports', '/settings'].includes(location.pathname)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <AppShell />;
 }

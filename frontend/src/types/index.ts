@@ -65,6 +65,8 @@ export interface ProductVariant {
   sku: string;
   name: string;
   price: string;
+  /** Amount added to the product's base sales price. */
+  price_modifier?: string;
   status: 'active' | 'archived';
   attributes?: Record<string, string>;
 }
@@ -78,6 +80,11 @@ export interface Product extends BaseEntity {
   status: 'active' | 'archived';
   variants: ProductVariant[];
   default_price: string;
+  product_type?: 'software' | 'addon' | 'service' | 'physical';
+  sales_price?: string;
+  cost_price?: string;
+  tax_rate?: string;
+  notes?: string;
 }
 
 /** Subscription Plan */
@@ -97,6 +104,11 @@ export interface SubscriptionPlan extends BaseEntity {
   auto_renew: boolean;
   description: string;
   features: string[];
+  start_date?: string;
+  end_date?: string;
+  auto_close_on_expiry?: boolean;
+  can_close_early?: boolean;
+  can_renew?: boolean;
 }
 
 /** Discount */
@@ -111,6 +123,9 @@ export interface Discount extends BaseEntity {
   start_date: string;
   end_date: string;
   status: 'active' | 'expired';
+  minimum_quantity?: number;
+  scope?: 'product' | 'subscription';
+  product_id?: string;
 }
 
 /** Quotation Item */
@@ -162,6 +177,7 @@ export interface SubscriptionEvent {
 /** Subscription Item snapshot */
 export interface SubscriptionItem {
   id: string;
+  product_id?: string;
   product_name: string;
   quantity: number;
   unit_price: string;
@@ -190,6 +206,21 @@ export interface Subscription extends BaseEntity {
   tax_amount: string;
   total_recurring: string;
   auto_renew: boolean;
+  can_pause?: boolean;
+  can_close_early?: boolean;
+  can_renew?: boolean;
+  discount_id?: string;
+  discount_code?: string;
+  discount_type?: DiscountType;
+  discount_value?: string;
+  discount_start_date?: string;
+  discount_end_date?: string;
+  discount_min_subtotal?: string;
+  discount_minimum_quantity?: number;
+  discount_scope?: 'product' | 'subscription';
+  discount_product_id?: string;
+  discount_usage_limit?: number;
+  discount_usage_count?: number;
   pause_reason?: string;
   events: SubscriptionEvent[];
 }

@@ -21,7 +21,7 @@ export function SubscriptionsPage() {
     settings,
     pauseSubscription,
     resumeSubscription,
-    renewSubscription,
+    setSubscriptionAutoRenew,
     closeSubscription,
   } = useSubscription();
 
@@ -150,7 +150,7 @@ export function SubscriptionsPage() {
 
                     <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1.5">
-                        {sub.status === 'active' && (
+                        {sub.status === 'active' && sub.can_pause !== false && (
                           <Button
                             variant="outline"
                             size="sm"
@@ -294,7 +294,7 @@ export function SubscriptionsPage() {
               <div className="flex items-center gap-2">
                 {selectedSub.status === 'active' && (
                   <>
-                    <Button
+                    {selectedSub.can_pause !== false && <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setIsPauseModalOpen(true)}
@@ -302,19 +302,19 @@ export function SubscriptionsPage() {
                     >
                       <Pause className="h-3.5 w-3.5 mr-1" />
                       Pause Billing
-                    </Button>
-                    <Button
+                    </Button>}
+                    {selectedSub.can_renew !== false && !selectedSub.auto_renew && <Button
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        renewSubscription(selectedSub.id);
+                        setSubscriptionAutoRenew(selectedSub.id, true);
                         setSelectedSub(null);
                       }}
                       className="rounded-xl"
                     >
                       <RotateCcw className="h-3.5 w-3.5 mr-1" />
-                      Advance Cycle
-                    </Button>
+                      Enable auto-renew
+                    </Button>}
                   </>
                 )}
 
@@ -332,7 +332,7 @@ export function SubscriptionsPage() {
                   </Button>
                 )}
 
-                {selectedSub.status !== 'closed' && (
+                {selectedSub.status !== 'closed' && selectedSub.can_close_early !== false && (
                   <Button
                     variant="destructive"
                     size="sm"

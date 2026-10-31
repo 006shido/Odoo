@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router';
 import {
   CreditCard,
   CheckCircle2,
@@ -15,7 +14,6 @@ import { cn } from '@/lib/utils';
 import type { Invoice } from '@/types';
 
 export function CustomerPortalPage() {
-  const navigate = useNavigate();
   const {
     currentUser,
     customers,
@@ -24,11 +22,10 @@ export function CustomerPortalPage() {
     quotations,
     payments,
     settings,
-    switchCustomerUser,
-    switchRole,
     acceptQuotation,
     rejectQuotation,
     recordPayment,
+    setSubscriptionAutoRenew,
   } = useSubscription();
 
   const [activeTab, setActiveTab] = useState<'subs' | 'invoices' | 'quotes' | 'payments' | 'profile'>('subs');
@@ -36,13 +33,22 @@ export function CustomerPortalPage() {
   const [payingInvoice, setPayingInvoice] = useState<Invoice | null>(null);
   const [payMethod, setPayMethod] = useState<'card' | 'bank_transfer'>('card');
   const [isProcessing, setIsProcessing] = useState(false);
+  const today = new Date().toISOString().slice(0, 10);
 
   // Active customer identity
   const activeCustomer = useMemo(() => {
-    if (currentUser.customer_id) {
-      return customers.find((c) => c.id === currentUser.customer_id) || customers[0]!;
-    }
-    return customers[0]!;
+    const linkedCustomer = customers.find((customer) =>
+      (currentUser.customer_id && customer.id === currentUser.customer_id) ||
+      customer.email.toLowerCase() === currentUser.email.toLowerCase(),
+    );
+    return linkedCustomer || {
+      id: currentUser.customer_id || '',
+      name: `${currentUser.first_name} ${currentUser.last_name}`.trim(),
+      company_name: currentUser.title || '',
+      email: currentUser.email,
+      billing_address: { street: '', city: '', state: '', postal_code: '', country: '' },
+      tax_id: '',
+    };
   }, [currentUser, customers]);
 
   // STRICT IDOR ISOLATION: Filter ONLY this customer's records!
@@ -90,7 +96,7 @@ export function CustomerPortalPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
-      {/* Customer Switcher / Demo Banner */}
+      {/* Signed-in customer */}
       <div className="p-4 rounded-2xl bg-surface border border-border/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-accent text-white font-bold flex items-center justify-center">
@@ -111,33 +117,6 @@ export function CustomerPortalPage() {
           </div>
         </div>
 
-        {/* Demo switcher */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-text-tertiary">Switch Company:</span>
-          <select
-            value={activeCustomer.id}
-            onChange={(e) => switchCustomerUser(e.target.value)}
-            className="px-3 py-1.5 rounded-xl border border-border text-xs bg-surface-secondary text-text-primary focus:outline-none focus:ring-2 focus:ring-accent font-medium"
-          >
-            {customers.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.company_name}
-              </option>
-            ))}
-          </select>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              switchRole('admin');
-              navigate('/dashboard');
-            }}
-            className="rounded-xl text-xs h-8"
-          >
-            Return to Admin
-          </Button>
-        </div>
       </div>
 
       {/* Segmented Tabs */}
@@ -208,12 +187,22 @@ export function CustomerPortalPage() {
                     </div>
                   </div>
 
-                  <div className="mt-6 pt-4 border-t border-border/60 flex items-center justify-between text-xs">
+                  <div className="mt-6 pt-4 border-t border-border/60 flex flex-wrap items-center justify-between gap-3 text-xs">
                     <span className="inline-flex items-center gap-1 text-success font-medium">
                       <ShieldCheck className="h-4 w-4" />
-                      Active Contract
+                      {sub.status === 'active' ? 'Active Contract' : `Contract ${sub.status}`}
                     </span>
-                    <span className="text-text-tertiary">Managed by Brightloop</span>
+                    {sub.status === 'active' && sub.can_renew !== false ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-8 rounded-lg text-xs"
+                        onClick={() => setSubscriptionAutoRenew(sub.id, !sub.auto_renew)}
+                      >
+                        Auto-renew {sub.auto_renew ? 'on · turn off' : 'off · turn on'}
+                      </Button>
+                    ) : <span className="text-text-tertiary">Managed by Brightloop</span>}
                   </div>
                 </div>
               ))
@@ -254,7 +243,7 @@ export function CustomerPortalPage() {
                         {inv.billing_period_start} to {inv.billing_period_end}
                       </td>
                       <td className="px-6 py-4 text-xs font-medium">
-                        <span className={inv.balance_due !== '0.00' && inv.due_date < '2026-10-31' ? 'text-error font-bold' : 'text-text-secondary'}>
+                        <span className={inv.balance_due !== '0.00' && inv.due_date < today ? 'text-error font-bold' : 'text-text-secondary'}>
                           {inv.due_date}
                         </span>
                       </td>

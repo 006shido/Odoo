@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import type { Discount, DiscountType } from '@/types';
 
 export function DiscountsPage() {
-  const { discounts, createDiscount, updateDiscount, settings } = useSubscription();
+  const { discounts, products, createDiscount, updateDiscount, settings } = useSubscription();
   const [search, setSearch] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
@@ -21,6 +21,9 @@ export function DiscountsPage() {
     type: 'percentage' as DiscountType,
     value: '15',
     min_subtotal: '100.00',
+    minimum_quantity: 1,
+    scope: 'subscription' as 'subscription' | 'product',
+    product_id: '',
     usage_limit: 100,
     start_date: new Date().toISOString().split('T')[0]!,
     end_date: '2026-12-31',
@@ -41,6 +44,9 @@ export function DiscountsPage() {
       type: 'percentage',
       value: '15',
       min_subtotal: '100.00',
+      minimum_quantity: 1,
+      scope: 'subscription',
+      product_id: '',
       usage_limit: 100,
       start_date: new Date().toISOString().split('T')[0]!,
       end_date: '2026-12-31',
@@ -59,6 +65,9 @@ export function DiscountsPage() {
       type: formData.type,
       value: formData.value,
       min_subtotal: formData.min_subtotal,
+      minimum_quantity: Math.max(1, Number(formData.minimum_quantity) || 1),
+      scope: formData.scope,
+      product_id: formData.scope === 'product' ? formData.product_id : undefined,
       usage_limit: Number(formData.usage_limit) || undefined,
       start_date: formData.start_date,
       end_date: formData.end_date,
@@ -162,6 +171,10 @@ export function DiscountsPage() {
 
                 <div className="mt-4 pt-3 border-t border-border/60 text-xs text-text-secondary space-y-1">
                   <p>Min Spend: {formatCurrency(disc.min_subtotal, settings.currency_symbol)}</p>
+                  <p>Minimum Quantity: {disc.minimum_quantity ?? 1}</p>
+                  <p>Applies to: {disc.scope === 'product' && disc.product_id
+                    ? products.find((product) => product.id === disc.product_id)?.name ?? 'Selected product'
+                    : 'All eligible items'}</p>
                   <p>Valid: {disc.start_date} to {disc.end_date}</p>
                 </div>
               </div>
@@ -217,6 +230,44 @@ export function DiscountsPage() {
                   />
                 </div>
               </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-text-primary">Minimum Quantity</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.minimum_quantity}
+                    onChange={(e) => setFormData({ ...formData, minimum_quantity: parseInt(e.target.value) || 1 })}
+                    className="w-full px-3 py-2 rounded-xl border border-border text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-text-primary">Applies To</label>
+                  <select
+                    value={formData.scope}
+                    onChange={(e) => setFormData({ ...formData, scope: e.target.value as 'subscription' | 'product' })}
+                    className="w-full px-3 py-2 rounded-xl border border-border text-sm text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-accent"
+                  >
+                    <option value="subscription">All eligible items</option>
+                    <option value="product">Specific product</option>
+                  </select>
+                </div>
+              </div>
+              {formData.scope === 'product' && (
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-text-primary">Product</label>
+                  <select
+                    required
+                    value={formData.product_id}
+                    onChange={(e) => setFormData({ ...formData, product_id: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-border text-sm text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-accent"
+                  >
+                    <option value="">Choose a product</option>
+                    {products.map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}
+                  </select>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">

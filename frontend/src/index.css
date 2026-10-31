@@ -2,79 +2,76 @@
 
 @layer base {
   :root {
-    /* Apple Light Mode Palette (System Light) */
-    --background: #F5F5F7;
+    /* Brightloop light palette */
+    --background: #F7F9F8;
     --surface: #FFFFFF;
-    --surface-secondary: #F2F2F7;
-    --surface-tertiary: #E5E5EA;
-    --border: rgba(0, 0, 0, 0.08);
-    --border-strong: rgba(0, 0, 0, 0.15);
-    --text-primary: #1D1D1F;
-    --text-secondary: #86868B;
-    --text-tertiary: #A1A1A6;
+    --surface-secondary: #F0F4F2;
+    --surface-tertiary: #E4EBE7;
+    --border: rgba(23, 43, 34, 0.10);
+    --border-strong: rgba(23, 43, 34, 0.18);
+    --text-primary: #17211D;
+    --text-secondary: #63716A;
+    --text-tertiary: #87938D;
     --text-inverse: #FFFFFF;
 
-    /* Apple System Blue Accent */
-    --accent: #0071E3;
-    --accent-hover: #0077ED;
-    --accent-light: rgba(0, 113, 227, 0.10);
+    /* Brightloop evergreen accent */
+    --accent: #146C55;
+    --accent-hover: #105541;
+    --accent-light: rgba(20, 108, 85, 0.10);
     --accent-text: #FFFFFF;
 
     /* Semantic Status Colors */
-    --success: #34C759;
-    --success-light: rgba(52, 199, 89, 0.12);
+    --success: #16834A;
+    --success-light: rgba(22, 131, 74, 0.10);
     --warning: #FF9500;
     --warning-light: rgba(255, 149, 0, 0.12);
     --error: #FF3B30;
     --error-light: rgba(255, 59, 48, 0.12);
-    --info: #0071E3;
-    --info-light: rgba(0, 113, 227, 0.12);
+    --info: #256D5A;
+    --info-light: rgba(37, 109, 90, 0.10);
 
-    /* Apple Glass Tokens (Light Mode - GlassKit standard) */
-    --glass-bg: rgba(255, 255, 255, 0.72);
-    --glass-surface: rgba(255, 255, 255, 0.78);
-    --glass-surface-secondary: rgba(242, 242, 247, 0.75);
-    --glass-border: rgba(255, 255, 255, 0.65);
-    --glass-border-subtle: rgba(0, 0, 0, 0.06);
-    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05), inset 0 1px 1px 0 rgba(255, 255, 255, 0.9);
+    /* Quiet translucent surfaces */
+    --glass-bg: rgba(255, 255, 255, 0.82);
+    --glass-surface: rgba(255, 255, 255, 0.86);
+    --glass-surface-secondary: rgba(240, 244, 242, 0.78);
+    --glass-border: rgba(255, 255, 255, 0.72);
+    --glass-border-subtle: rgba(23, 43, 34, 0.06);
+    --glass-shadow: 0 8px 32px 0 rgba(23, 43, 34, 0.06), inset 0 1px 1px 0 rgba(255, 255, 255, 0.9);
     --glass-blur: 24px;
   }
 
   .dark {
-    /* Apple Dark Mode Palette (macOS / iOS 18 System Dark) */
-    --background: #000000;
-    --surface: #1C1C1E;
-    --surface-secondary: #2C2C2E;
-    --surface-tertiary: #3A3A3C;
-    --border: rgba(255, 255, 255, 0.12);
-    --border-strong: rgba(255, 255, 255, 0.18);
-    --text-primary: #F5F5F7;
-    --text-secondary: #8E8E93;
-    --text-tertiary: #636366;
-    --text-inverse: #1C1C1E;
+    --background: #111915;
+    --surface: #1A241F;
+    --surface-secondary: #222F29;
+    --surface-tertiary: #2B3A33;
+    --border: rgba(229, 244, 235, 0.12);
+    --border-strong: rgba(229, 244, 235, 0.20);
+    --text-primary: #F1F7F3;
+    --text-secondary: #A9B8AF;
+    --text-tertiary: #809188;
+    --text-inverse: #17211D;
 
-    /* Apple Vibrant Blue Accent */
-    --accent: #0A84FF;
-    --accent-hover: #409CFF;
-    --accent-light: rgba(10, 132, 255, 0.16);
+    --accent: #62C39B;
+    --accent-hover: #80D4AE;
+    --accent-light: rgba(98, 195, 155, 0.16);
     --accent-text: #FFFFFF;
 
-    --success: #30D158;
-    --success-light: rgba(48, 209, 88, 0.15);
+    --success: #5BCB88;
+    --success-light: rgba(91, 203, 136, 0.15);
     --warning: #FF9F0A;
     --warning-light: rgba(255, 159, 10, 0.15);
     --error: #FF453A;
     --error-light: rgba(255, 69, 58, 0.15);
-    --info: #0A84FF;
-    --info-light: rgba(10, 132, 255, 0.15);
+    --info: #62C39B;
+    --info-light: rgba(98, 195, 155, 0.15);
 
-    /* Apple Glass Tokens (Dark Mode - GlassKit standard) */
-    --glass-bg: rgba(28, 28, 30, 0.72);
-    --glass-surface: rgba(32, 32, 35, 0.76);
-    --glass-surface-secondary: rgba(44, 44, 46, 0.72);
-    --glass-border: rgba(255, 255, 255, 0.12);
-    --glass-border-subtle: rgba(255, 255, 255, 0.07);
-    --glass-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.50), inset 0 1px 1px 0 rgba(255, 255, 255, 0.14);
+    --glass-bg: rgba(26, 36, 31, 0.82);
+    --glass-surface: rgba(31, 44, 37, 0.84);
+    --glass-surface-secondary: rgba(34, 47, 41, 0.78);
+    --glass-border: rgba(229, 244, 235, 0.12);
+    --glass-border-subtle: rgba(229, 244, 235, 0.08);
+    --glass-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.38), inset 0 1px 1px 0 rgba(255, 255, 255, 0.08);
     --glass-blur: 28px;
   }
 }
@@ -105,7 +102,7 @@
   --color-info: var(--info);
   --color-info-light: var(--info-light);
 
-  /* Apple Typography Stack (Inter primary per apple-ui-skills) */
+  /* Clear product typography with system fallbacks */
   --font-family-sans: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
@@ -131,7 +128,7 @@
   --spacing-20: 5rem;
   --spacing-24: 6rem;
 
-  /* Standard Apple Radii (21px scale per apple-ui-skills) */
+  /* Rounded, consistent component corners */
   --radius-xs: 0.25rem;
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
@@ -141,7 +138,7 @@
   --radius-3xl: 1.5rem;
   --radius-full: 9999px;
 
-  /* Apple Soft Depth Shadows */
+  /* Soft product surfaces */
   --shadow-2xs: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
   --shadow-xs: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
   --shadow-sm: 0 2px 8px -1px rgba(0, 0, 0, 0.05);
