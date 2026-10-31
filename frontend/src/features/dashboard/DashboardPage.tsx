@@ -12,6 +12,7 @@ import {
   Calendar,
   ChevronRight,
   ShieldAlert,
+  FileText,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -36,6 +37,7 @@ export function DashboardPage() {
     subscriptions,
     invoices,
     payments,
+    quotations,
     customers,
     settings,
     runBillingEngine,
@@ -97,6 +99,19 @@ export function DashboardPage() {
       .sort((a, b) => a.next_billing_date.localeCompare(b.next_billing_date))
       .slice(0, 4);
   }, [activeSubs]);
+
+  // Active Commercial Pipeline from Quotations
+  const pendingQuotes = useMemo(() => {
+    return quotations.filter((q) => q.status === 'sent' || q.status === 'accepted');
+  }, [quotations]);
+
+  const quotePipelineTotal = useMemo(() => {
+    let sum = '0.00';
+    pendingQuotes.forEach((q) => {
+      sum = addDecimals(sum, q.total);
+    });
+    return sum;
+  }, [pendingQuotes]);
 
   // Chart data for revenue trend
   const revenueChartData = useMemo(() => {
@@ -283,6 +298,32 @@ export function DashboardPage() {
             className="rounded-xl shrink-0 bg-surface"
           >
             Open Control Tower <ArrowUpRight className="ml-1.5 h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )}
+
+      {/* Commercial Pipeline Highlight */}
+      {pendingQuotes.length > 0 && (
+        <div className="p-4 rounded-2xl bg-accent/10 border border-accent/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-accent text-white shrink-0 shadow-xs">
+              <FileText className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-text-primary">
+                Active Commercial Pipeline: {formatCurrency(quotePipelineTotal, settings.currency_symbol)}
+              </p>
+              <p className="text-xs text-text-secondary">
+                {pendingQuotes.length} active proposal(s) awaiting conversion or customer decision.
+              </p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => navigate('/quotations')}
+            className="rounded-xl shrink-0"
+          >
+            Review Proposals <ArrowUpRight className="ml-1.5 h-3.5 w-3.5" />
           </Button>
         </div>
       )}

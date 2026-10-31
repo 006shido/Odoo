@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router';
 import {
   ArrowRight,
   Layers,
@@ -49,6 +50,8 @@ const features = [
 ];
 
 export function WelcomePage() {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -60,8 +63,8 @@ export function WelcomePage() {
             </div>
             <span className="text-lg font-semibold tracking-tight">Brightloop</span>
           </div>
-          <Button variant="outline" size="sm">
-            Sign In <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+          <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')} className="rounded-xl">
+            Enter Workspace <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
           </Button>
         </div>
       </header>
@@ -82,11 +85,11 @@ export function WelcomePage() {
             One workspace, full control.
           </p>
           <div className="mt-8 flex items-center gap-3">
-            <Button size="lg">
-              Get Started <ArrowRight className="ml-2 h-4 w-4" />
+            <Button size="lg" onClick={() => navigate('/dashboard')} className="rounded-xl shadow-xs">
+              Open Dashboard <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
-            <Button variant="outline" size="lg">
-              View Documentation
+            <Button variant="outline" size="lg" onClick={() => navigate('/portal')} className="rounded-xl">
+              Customer Portal View
             </Button>
           </div>
         </div>
@@ -222,4 +225,3 @@ export function WelcomePage() {
     </div>
   );
 }
-
