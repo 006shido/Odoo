@@ -1,1 +1,1 @@
-# HACKATHON odoo
+# HACKATHON odoo 2026
