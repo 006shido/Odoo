@@ -38,7 +38,7 @@ const demoAccounts: Array<{
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { setCurrentUser, switchRole } = useSubscription();
+  const { setCurrentUser } = useSubscription();
   const [mode, setMode] = useState<AuthMode>(() =>
     new URLSearchParams(window.location.search).get('mode') === 'create' ? 'create' : 'signin',
   );
@@ -100,10 +100,24 @@ export function LoginPage() {
     }
   };
 
-  const enterDemo = (role: UserRole) => {
-    switchRole(role);
-    localStorage.setItem('brightloop_session', 'active');
-    navigate(role === 'customer' ? '/plans' : '/dashboard', { replace: true });
+  const enterDemo = async (role: UserRole) => {
+    const demoEmail = demoAccounts.find((account) => account.role === role)?.email;
+    if (!demoEmail) return;
+    setError('');
+    setBusy(true);
+    try {
+      await api.get('/auth/csrf/');
+      const result = await api.post<{ user: AuthUser }>('/auth/login/', {
+        email: demoEmail,
+        password: 'Brightloop@2026',
+      });
+      const session = await api.get<{ customer_id?: string }>('/auth/me/');
+      startSession({ ...result.user, customer_id: session.customer_id });
+    } catch {
+      setError('Demo sign-in needs the backend demo accounts. Start Django and run `python manage.py seed_demo_data`, then try again.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const passwordRules = mode === 'create' ? [
@@ -190,7 +204,7 @@ export function LoginPage() {
             <div className="my-8 flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.12em] text-[#a1aaa5]"><span className="h-px flex-1 bg-[#e4e8e5]" />Hackathon demo access<span className="h-px flex-1 bg-[#e4e8e5]" /></div>
             <div className="space-y-2">
               {demoAccounts.map(({ role, label, description, email: demoEmail, icon: Icon }) => (
-                <button key={role} type="button" onClick={() => enterDemo(role)} className="group flex w-full items-center gap-3 rounded-2xl border border-[#e4e8e5] bg-white px-3.5 py-3 text-left transition hover:border-emerald-200 hover:bg-emerald-50/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600">
+                <button key={role} type="button" disabled={busy} onClick={() => void enterDemo(role)} className="group flex w-full items-center gap-3 rounded-2xl border border-[#e4e8e5] bg-white px-3.5 py-3 text-left transition hover:border-emerald-200 hover:bg-emerald-50/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 disabled:cursor-wait disabled:opacity-60">
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f2f6f3] text-emerald-800 group-hover:bg-emerald-100"><Icon className="h-4 w-4" /></span>
                   <span className="min-w-0 flex-1"><span className="block text-sm font-semibold">Continue as {label}</span><span className="block truncate text-xs text-[#858f89]">{description} · {demoEmail}</span></span>
                   <ArrowRight className="h-4 w-4 text-[#a1aaa5] transition group-hover:translate-x-0.5 group-hover:text-emerald-800" />

@@ -23,6 +23,7 @@ import {
   AlertTriangle,
   Info,
   LogOut,
+  Brain,
 } from 'lucide-react';
 import { useSubscription } from '@/lib/store/subscriptionStore';
 import { useTheme } from '@/lib/theme';
@@ -108,6 +109,7 @@ export function AppShell() {
     {
       title: 'Analytics & Tools',
       items: [
+        { name: 'AI Copilot', path: '/ai', icon: Brain },
         { name: 'Reports', path: '/reports', icon: BarChart3 },
         { name: 'Customer Portal', path: '/portal', icon: ExternalLink },
         { name: 'Settings', path: '/settings', icon: Settings },
@@ -119,6 +121,7 @@ export function AppShell() {
     ? [{ title: 'Your account', items: [
         { name: 'Explore plans', path: '/plans', icon: Sparkles },
         { name: 'My subscriptions & billing', path: '/portal', icon: ExternalLink },
+        { name: 'AI support', path: '/ai', icon: Brain },
       ] }]
     : navigationSections
         .map((section) => ({
@@ -139,6 +142,7 @@ export function AppShell() {
     if (p.includes('/payments')) return 'Payments';
     if (p.includes('/discounts')) return 'Discounts';
     if (p.includes('/reports')) return 'Reports';
+    if (p.includes('/ai')) return currentUser.role === 'customer' ? 'AI Support' : 'AI Copilot';
     if (p.includes('/settings')) return 'Settings';
     if (p.includes('/portal')) return 'Customer Portal';
     return 'Dashboard';
