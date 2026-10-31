@@ -1,3 +1,5 @@
+from rest_framework.authentication import SessionAuthentication
+from django.db import transaction
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -14,7 +16,9 @@ def csrf_view(request):
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@transaction.atomic
 def register_view(request):
+    SessionAuthentication().enforce_csrf(request)
     serializer = RegisterSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.save()
@@ -27,7 +31,9 @@ def register_view(request):
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@transaction.atomic
 def login_view(request):
+    SessionAuthentication().enforce_csrf(request)
     serializer = LoginSerializer(data=request.data)
     if serializer.is_valid():
         email = serializer.validated_data['email'].lower()
@@ -45,11 +51,13 @@ def login_view(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def logout_view(request):
     logout(request)
     return Response({'message': 'Logged out successfully.'})
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def me_view(request):
     if not request.user.is_authenticated:
         return Response({'authenticated': False, 'user': None})
@@ -68,10 +76,7 @@ def forgot_password_view(request):
     email = request.data.get('email', '').strip().lower()
     if not email:
         return Response({'error': 'Email is required.'}, status=status.HTTP_400_BAD_REQUEST)
-    # Simulated email reset link per requirements
-    return Response({
-        'message': f'If an account exists for {email}, a password reset link has been dispatched.',
-    })
+    return Response({'error': 'Password reset email delivery is not configured. Contact your workspace administrator.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 class CustomerViewSet(viewsets.ModelViewSet):
     queryset = Customer.objects.all().order_by('-created_at')

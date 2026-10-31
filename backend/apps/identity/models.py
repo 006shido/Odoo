@@ -76,6 +76,8 @@ class Customer(models.Model):
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=50, blank=True)
     billing_address = models.TextField(blank=True)
+    status = models.CharField(max_length=20, default='active', choices=[('active','Active'),('lead','Lead'),('archived','Archived')])
+    currency = models.CharField(max_length=3, default='USD')
     tax_id = models.CharField(max_length=100, blank=True)
     notes = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
@@ -85,3 +87,5 @@ class Customer(models.Model):
     def __str__(self):
         return self.company_name or self.name
 
+
+from .workspace_models import WorkspaceSettings, WorkspaceAudit

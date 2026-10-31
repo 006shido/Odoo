@@ -96,11 +96,11 @@ export function ProductsPage() {
     }));
   };
 
-  const handleSubmitCreate = (e: React.FormEvent) => {
+  const handleSubmitCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.code) return;
 
-    createProduct({
+    await createProduct({
       name: formData.name,
       code: formData.code,
       category: formData.category,
