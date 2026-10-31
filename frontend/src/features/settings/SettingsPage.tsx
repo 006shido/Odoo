@@ -48,7 +48,7 @@ export function SettingsPage() {
             Workspace Settings
           </h2>
           <p className="text-sm text-text-secondary mt-1">
-            Configure commercial identity, currency standards, numbering schemes, and staff access permissions.
+            Company details, default currency, invoice numbering, and user roles.
           </p>
         </div>
 

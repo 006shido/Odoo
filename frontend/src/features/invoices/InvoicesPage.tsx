@@ -67,7 +67,7 @@ export function InvoicesPage() {
             Invoices & Recurring Billing
           </h2>
           <p className="text-sm text-text-secondary mt-1">
-            Automated billing engine, accounts receivable tracking, and immutable financial records.
+            Invoices, recurring billing runs, and outstanding balances.
           </p>
         </div>
 

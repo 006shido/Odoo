@@ -92,7 +92,7 @@ export function PlansPage() {
             Subscription Plans & Pricing
           </h2>
           <p className="text-sm text-text-secondary mt-1">
-            Build and manage recurring billing terms, renewal conditions, and feature entitlements.
+            Billing cycles, pricing tiers, and renewal rules.
           </p>
         </div>
 

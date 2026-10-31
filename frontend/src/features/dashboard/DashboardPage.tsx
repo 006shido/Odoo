@@ -148,9 +148,9 @@ export function DashboardPage() {
       {/* Top Header & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-text-primary">Executive Overview</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-text-primary">Overview</h2>
           <p className="text-sm text-text-secondary mt-1">
-            Real-time subscription operations, financial health, and customer renewals.
+            Subscriptions, cash collected, and upcoming renewals.
           </p>
         </div>
 
@@ -272,17 +272,17 @@ export function DashboardPage() {
         </div>
       </div>
 
-      {/* Control Tower Alert Banner */}
+      {/* Attention Banner */}
       {(overdueInvoices.length > 0 || pausedSubs.length > 0) && (
         <div className="p-4 rounded-2xl bg-warning-light/60 border border-warning/30 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <ShieldAlert className="h-5 w-5 text-warning shrink-0" />
             <div>
               <p className="text-sm font-semibold text-text-primary">
-                Control Tower Attention Needed
+                Accounts needing review
               </p>
               <p className="text-xs text-text-secondary">
-                You have {overdueInvoices.length} overdue invoice(s) totaling{' '}
+                {overdueInvoices.length} overdue invoice(s) totaling{' '}
                 {formatCurrency(
                   overdueInvoices.reduce((acc, i) => addDecimals(acc, i.balance_due), '0.00'),
                   settings.currency_symbol,

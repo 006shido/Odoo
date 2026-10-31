@@ -177,7 +177,7 @@ export function QuotationsPage() {
             Quotations & Proposals
           </h2>
           <p className="text-sm text-text-secondary mt-1">
-            Build commercial proposals, track customer sign-offs, and convert directly to subscriptions.
+            Draft quotes, send them for customer review, and convert accepted quotes to subscriptions.
           </p>
         </div>
 

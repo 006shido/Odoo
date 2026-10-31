@@ -59,7 +59,7 @@ export function SubscriptionsPage() {
             Subscription Contracts
           </h2>
           <p className="text-sm text-text-secondary mt-1">
-            Active recurring agreements, lifecycle transitions, and scheduled billing dates.
+            Active subscriptions, renewal dates, and status changes.
           </p>
         </div>
       </div>

@@ -76,7 +76,7 @@ export function ControlTowerPage() {
             </h2>
           </div>
           <p className="text-sm text-text-secondary mt-1">
-            Centralized operational monitoring for renewals, paused accounts, overdue invoices, and billing runs.
+            Track renewals due soon, paused subscriptions, overdue invoices, and automated billing runs.
           </p>
         </div>
 

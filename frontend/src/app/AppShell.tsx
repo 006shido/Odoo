@@ -135,7 +135,7 @@ export function AppShell() {
     if (p.includes('/settings')) return { category: 'Intelligence', title: 'Workspace Settings' };
     if (p.includes('/portal')) return { category: 'Portal', title: 'Customer Self-Service' };
     if (p.includes('/welcome')) return { category: 'Discovery', title: 'Product Overview & Tour' };
-    return { category: 'Overview', title: 'Executive Overview' };
+    return { category: 'Overview', title: 'Overview' };
   };
 
   const pageInfo = getPageInfo();

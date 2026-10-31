@@ -181,7 +181,7 @@ export function CustomersPage() {
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-text-primary">Customer Accounts</h2>
           <p className="text-sm text-text-secondary mt-1">
-            Maintain customer records, billing addresses, tax identifiers, and commercial histories.
+            Customer contacts, billing addresses, and account histories.
           </p>
         </div>
 

@@ -125,7 +125,7 @@ export function PaymentsPage() {
             Payments & Allocation
           </h2>
           <p className="text-sm text-text-secondary mt-1">
-            Record manual cash/wire transactions, manage invoice allocations, and prevent over-allocation.
+            Record payments, allocate them to invoices, and track balances.
           </p>
         </div>
 

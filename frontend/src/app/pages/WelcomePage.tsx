@@ -20,32 +20,32 @@ const features = [
   {
     icon: Users,
     title: 'Customer Management',
-    description: 'Maintain customer profiles, contacts, and billing details with full audit trail.',
+    description: 'Customer profiles, contacts, and billing addresses.',
   },
   {
     icon: Layers,
-    title: 'Product Catalogue',
-    description: 'Products, variants, and subscription plans with flexible pricing.',
+    title: 'Product Catalog',
+    description: 'Products, variants, and recurring billing plans.',
   },
   {
     icon: FileText,
     title: 'Quotations & Invoices',
-    description: 'Professional documents with PDF generation and lifecycle tracking.',
+    description: 'Draft quotes, generate PDF invoices, and track status.',
   },
   {
     icon: CreditCard,
     title: 'Payment Allocation',
-    description: 'Record and allocate payments with full and partial support.',
+    description: 'Record payments and allocate them across open invoices.',
   },
   {
     icon: BarChart3,
     title: 'Reports & Analytics',
-    description: 'Subscription metrics, invoice ageing, and revenue insights.',
+    description: 'Revenue trends, invoice ageing, and customer retention.',
   },
   {
     icon: Shield,
     title: 'Control Tower',
-    description: 'Operational dashboard for renewals, overdue accounts, and billing health.',
+    description: 'Track upcoming renewals, paused accounts, and overdue balances.',
   },
 ];
 
@@ -58,7 +58,7 @@ export function WelcomePage() {
       <header className="border-b border-border bg-surface">
         <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent">
               <Zap className="h-5 w-5 text-accent-text" />
             </div>
             <span className="text-lg font-semibold tracking-tight">Brightloop</span>
@@ -73,16 +73,15 @@ export function WelcomePage() {
       <section className="mx-auto max-w-6xl px-6 py-20">
         <div className="max-w-2xl">
           <Badge variant="secondary" className="mb-4">
-            Subscription Management System
+            Subscription Management
           </Badge>
           <h1 className="text-4xl font-bold tracking-tight text-text-primary sm:text-5xl">
-            Clear operations.
+            Subscription operations
             <br />
-            Dependable billing.
+            and automated billing.
           </h1>
-          <p className="mt-4 text-lg text-text-secondary leading-relaxed max-w-xl">
-            Centralize your subscription lifecycle from quotation to payment.
-            One workspace, full control.
+          <p className="mt-4 text-base text-text-secondary leading-relaxed max-w-xl">
+            Manage customer accounts, recurring plans, quotations, automated billing runs, and payment reconciliation in one workspace.
           </p>
           <div className="mt-8 flex items-center gap-3">
             <Button size="lg" onClick={() => navigate('/dashboard')} className="rounded-xl shadow-xs">
@@ -100,17 +99,17 @@ export function WelcomePage() {
       {/* Features */}
       <section className="mx-auto max-w-6xl px-6 py-16">
         <h2 className="text-2xl font-semibold tracking-tight text-text-primary mb-2">
-          Everything you need
+          Features
         </h2>
-        <p className="text-text-secondary mb-10">
-          A complete subscription operations platform, built for clarity and precision.
+        <p className="text-text-secondary mb-10 text-sm">
+          Core tools for managing subscriptions, billing cycles, and accounts receivable.
         </p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature) => (
             <Card key={feature.title} className="border-border/60 shadow-xs hover:shadow-sm transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-md bg-accent-light">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent-light">
                     <feature.icon className="h-4.5 w-4.5 text-accent" />
                   </div>
                   <CardTitle className="text-base">{feature.title}</CardTitle>
@@ -131,10 +130,10 @@ export function WelcomePage() {
       {/* Design System Preview */}
       <section className="mx-auto max-w-6xl px-6 py-16">
         <h2 className="text-2xl font-semibold tracking-tight text-text-primary mb-2">
-          Design System Preview
+          UI components
         </h2>
-        <p className="text-text-secondary mb-10">
-          Component primitives and design tokens — visual verification.
+        <p className="text-text-secondary mb-10 text-sm">
+          Base component primitives and design tokens.
         </p>
 
         <div className="grid gap-8 lg:grid-cols-2">
@@ -207,8 +206,8 @@ export function WelcomePage() {
               <p className="text-xl font-semibold">Heading xl</p>
               <p className="text-lg font-medium">Heading lg</p>
               <p className="text-base text-text-primary">Body base</p>
-              <p className="text-sm text-text-secondary">Body small / secondary</p>
-              <p className="text-xs text-text-tertiary">Caption / tertiary</p>
+              <p className="text-sm text-text-secondary">Body small</p>
+              <p className="text-xs text-text-tertiary">Caption</p>
             </CardContent>
           </Card>
         </div>
@@ -218,7 +217,7 @@ export function WelcomePage() {
       <footer className="border-t border-border bg-surface mt-8">
         <div className="mx-auto max-w-6xl px-6 py-6 text-center">
           <p className="text-xs text-text-tertiary">
-            Brightloop — Software Subscription Management System
+            Brightloop Subscription Management
           </p>
         </div>
       </footer>

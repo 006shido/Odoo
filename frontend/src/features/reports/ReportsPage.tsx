@@ -127,7 +127,7 @@ export function ReportsPage() {
             Financial Reports & Analytics
           </h2>
           <p className="text-sm text-text-secondary mt-1">
-            Reconcile invoiced balances, cash receipts, subscription retention, and accounts receivable ageing.
+            Cash collected, invoice ageing, and retention metrics.
           </p>
         </div>
 

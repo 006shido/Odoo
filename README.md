@@ -1,27 +1,27 @@
-# Brightloop Software — Subscription Management System
-> **Odoo Hackathon 2026** — Team: Talent Not Found
+# Brightloop Subscription Management
+> Odoo Hackathon 2026 | Team: Talent Not Found
 
-A unified software platform that runs the full lifecycle of a subscription business: product catalogue & variants, flexible subscription plans, sales quotations, automated recurring billing, discount rules, payment allocation, and the Finance Control Tower.
+A web application for subscription operations: product catalog, recurring plans, quotations, automated billing, discounts, payments, and an operations dashboard.
 
 ---
 
-## 🎯 Problem Statement Coverage
+## Problem statement coverage
 
-| Problem Scene (Odoo PDF) | Implementation & Solution |
+| Problem scene (Odoo PDF) | Implementation |
 |---|---|
-| **1. A new customer signs up** | Custom User model with roles: `Admin`, `Staff`, `Customer`. Online registration enforces password criteria (>8 chars, uppercase, lowercase, special character). Role-based views: Admin controls whole workspace, Staff has day-to-day operations, Customers access isolated self-service portal. |
-| **2. Launching a new plan** | Product catalogue with sales/cost price, taxes, and price-modifying variants (e.g. brand **Odoo Edition adds ₹560.00**). Plans support daily, weekly, monthly, and yearly intervals with admin policy toggles (auto-close, early closure, pause, and renewal). |
-| **3. Turning a quote into a subscription** | Quotation builder with payment terms and line item totals. Full lifecycle: `Draft` → `Sent` → `Accepted` / `Rejected` → `Converted`. One-click conversion to Subscription with idempotency safeguard (cannot convert twice). |
-| **4. Billing day** | Automated recurring billing engine (`manage.py run_billing_day` and UI button). Automatically generates invoices for eligible active subscriptions due for billing. Unique database constraint `(subscription, billing_period_start, billing_period_end)` prevents duplicate billing on retry. Real PDF generation using **ReportLab**. |
-| **5. A customer asks for a better price** | Admin discount rules: percentage or fixed amount, minimum spend/quantity, usage limits, and product or whole subscription scope. Automatically checked and applied on invoices. |
-| **6. The money comes in** | Multi-method payments (Bank Transfer, UPI, Card, Cash). Full and partial payment allocation with real-time balance tracking and automatic `paid` status transitions. Overdue detection. |
-| **7. The finance lead at end of month** | **Finance Control Tower**: Real-time KPI dashboard displaying active vs paused subscriptions, estimated normalized MRR, invoiced revenue vs cash collected, and outstanding overdue receivables with explainable operational health alerts. |
+| 1. A new customer signs up | Custom user model with roles: Admin, Staff, and Customer. Online registration validates passwords (minimum 8 characters, uppercase, lowercase, special character). Role-based views: Admin manages the workspace, Staff handles daily records, and Customers use an isolated self-service portal. |
+| 2. Launching a new plan | Product catalog with sales and cost price, tax rates, and price-adjusting variants (e.g. brand Odoo Edition adds ₹560.00). Plans support daily, weekly, monthly, and yearly intervals with toggles for auto-close, early closure, pause, and renewal. |
+| 3. Turning a quote into a subscription | Quotation builder with payment terms and item totals. Full lifecycle: Draft → Sent → Accepted / Rejected → Converted. One-click conversion to a subscription with duplicate conversion prevention. |
+| 4. Billing day | Automated recurring billing engine (`manage.py run_billing_day` and UI button). Generates invoices for eligible active subscriptions due on or before the selected date. Unique database constraint `(subscription, billing_period_start, billing_period_end)` prevents duplicate invoices on retry. PDF invoice generation using ReportLab. |
+| 5. A customer asks for a better price | Discount rules: percentage or fixed amount, minimum spend or quantity, usage limits, and product or subscription scope. Verified and applied directly to invoice lines. |
+| 6. The money comes in | Payments via bank transfer, UPI, card, and cash. Full and partial allocation to invoices with real time balance calculation and automatic status changes to paid. Overdue detection based on invoice due date. |
+| 7. The finance lead at end of month | Control Tower dashboard displaying active and paused subscriptions, normalized MRR, invoiced revenue vs. cash collected, and overdue balances. |
 
 ---
 
-## 🚀 Quickstart Guide
+## Quickstart
 
-### 1. Backend (Django 6.1.x + DRF)
+### 1. Backend (Django 6.1 + DRF)
 
 ```bash
 cd backend
@@ -32,18 +32,18 @@ source venv/bin/activate
 # Install dependencies (if not already installed)
 pip install -r requirements.txt
 
-# Run migrations & seed realistic demo data
+# Run migrations and seed demo data
 python manage.py migrate
 python manage.py seed_demo_data
 
-# (Optional) Test the Automated Recurring Billing Engine
+# (Optional) Test the recurring billing engine
 python manage.py run_billing_day
 
-# Start Django Development Server (port 8000)
+# Start Django server (port 8000)
 python manage.py runserver
 ```
 
-### 2. Frontend (React + Vite + TypeScript + Tailwind)
+### 2. Frontend (React 19 + Vite + TypeScript + Tailwind)
 
 ```bash
 cd frontend
@@ -51,46 +51,46 @@ cd frontend
 # Install dependencies
 npm install
 
-# Run tests
+# Run unit tests
 npm run test
 
-# Start Vite Dev Server (port 5173)
+# Start Vite dev server (port 5173)
 npm run dev
 ```
 
-The frontend will be available at `http://localhost:5173`.
+The frontend runs at `http://localhost:5173`.
 
 ---
 
-## ⚡ 1-Click Evaluation Credentials
+## Demo accounts
 
-The application includes 1-click evaluation buttons in the login screen and a topbar role switcher for rapid judging:
+The login screen includes quick fill buttons and a topbar role switcher:
 
-| Role | Email | Password | Scope |
+| Role | Email | Password | Access |
 |---|---|---|---|
-| **Admin** | `admin@brightloop.io` | `Brightloop@2026` | Full system control, catalogue, plans, discounts, billing engine, finance control tower. |
-| **Staff** | `staff@brightloop.io` | `Brightloop@2026` | Daily customer operations: customers, quotes, subscriptions, invoices, and payments. |
-| **Customer** | `alex@acmecorp.com` | `Brightloop@2026` | Self-service portal: own subscriptions, accept quotes, download invoice PDFs, view payments. |
+| Admin | `admin@brightloop.io` | `Brightloop@2026` | Full workspace access: catalog, plans, discounts, billing engine, and control tower. |
+| Staff | `staff@brightloop.io` | `Brightloop@2026` | Day-to-day operations: customers, quotes, subscriptions, invoices, and payments. |
+| Customer | `alex@acmecorp.com` | `Brightloop@2026` | Customer portal: view own subscriptions, accept quotes, download invoice PDFs, make payments. |
 
 ---
 
-## 🧪 Automated Test Verification
+## Automated test verification
 
 - **Backend tests** (models, variant pricing, quote conversion idempotency, billing retry safety, partial payment reconciliation):
   ```bash
   cd backend
   python manage.py test tests
-  # Ran 4 tests in 0.200s -> OK
+  # Ran 4 tests in 0.23s -> OK
   ```
 
-- **Frontend tests** (UI primitives, states, badges, dialogs, pagination):
+- **Frontend tests** (UI primitives, states, badges, dialogs, pagination, decimal math):
   ```bash
   cd frontend
   npm run test
-  # 9 test files passed, 32 of 32 tests passed
+  # 11 test files passed, 48 of 48 tests passed
   ```
 
-- **Typecheck & Production Build**:
+- **Typecheck and build**:
   ```bash
   cd frontend
   npx tsc --noEmit

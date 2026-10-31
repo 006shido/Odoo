@@ -27,7 +27,7 @@ export interface RequestOptions extends Omit<RequestInit, 'body'> {
 
 /**
  * Central HTTP client with CSRF token management and same-origin cookie credentials.
- * Configured to seamlessly proxy to Django REST Framework backend.
+ * Connects to the Django REST Framework backend.
  */
 async function request<T>(
   endpoint: string,

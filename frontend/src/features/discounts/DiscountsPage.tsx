@@ -82,7 +82,7 @@ export function DiscountsPage() {
             Discounts & Promotional Credits
           </h2>
           <p className="text-sm text-text-secondary mt-1">
-            Configure percentage and fixed price incentives applied during quotation and recurring billing.
+            Percentage and fixed discounts for quotes and recurring invoices.
           </p>
         </div>
 

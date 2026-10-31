@@ -112,7 +112,7 @@ export function ProductsPage() {
             Product Catalogue & Variants
           </h2>
           <p className="text-sm text-text-secondary mt-1">
-            Configure standalone products, tier variants, and base pricing structures.
+            Products, add-ons, and variant pricing.
           </p>
         </div>
 
