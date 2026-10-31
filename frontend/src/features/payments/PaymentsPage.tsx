@@ -291,7 +291,7 @@ export function PaymentsPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-text-primary">Payment Amount ($) *</label>
+                  <label className="text-xs font-semibold text-text-primary">Payment Amount ({settings.currency_symbol}) *</label>
                   <input
                     type="text"
                     required

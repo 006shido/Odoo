@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'apps.discounts',
     'apps.payments',
     'apps.analytics',
+    'apps.ai_assistant',
 ]
 
 MIDDLEWARE = [
@@ -103,6 +104,9 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
+    'DEFAULT_THROTTLE_RATES': {
+        'ai_assistant': '20/hour',
+    },
 }
 
 # CORS settings
@@ -114,3 +118,7 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000',
     'http://127.0.0.1:8000',
 ]
+
+# OpenAI stays server-side. Configure OPENAI_API_KEY in backend/.env or the host's secret store.
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
+OPENAI_MODEL = os.environ.get('OPENAI_MODEL', 'gpt-6-luna')

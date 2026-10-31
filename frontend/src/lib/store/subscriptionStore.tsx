@@ -2,6 +2,18 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { api } from '@/lib/api';
 import type { Customer, Product, SubscriptionPlan, Discount, Quotation, Subscription, Invoice, Payment, BillingRun, WorkspaceSettings, NotificationItem, AuditLogItem, AuthUser, UserRole } from '@/types';
 
+const inrInitialWorkspace: PricingWorkspace = localizeWorkspaceToInr({
+  settings: initialSettings,
+  customers: initialCustomers,
+  products: initialProducts,
+  plans: initialPlans,
+  discounts: initialDiscounts,
+  quotations: initialQuotations,
+  subscriptions: initialSubscriptions,
+  invoices: initialInvoices,
+  payments: initialPayments,
+});
+
 export interface SubscriptionContextType {
   metrics: {mrr: string; arr: string; revenue_months: Array<{month: string; invoiced: string; collected: string}>};
   isSignedIn: boolean;

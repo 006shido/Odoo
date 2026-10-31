@@ -103,7 +103,7 @@ export function WelcomePage() {
                   <Badge variant="success" className="rounded-full">On track</Badge>
                 </div>
                 <div className="mt-5 flex items-end justify-between">
-                  <span className="text-2xl font-semibold">{formatCurrency('149.00', settings.currency_symbol)}<span className="ml-1 text-xs font-normal text-text-secondary">/ month</span></span>
+                  <span className="text-2xl font-semibold">{formatCurrency('999.00', settings.currency_symbol)}<span className="ml-1 text-xs font-normal text-text-secondary">/ month</span></span>
                   <span className="text-xs text-text-secondary">Next bill · 01 Nov</span>
                 </div>
                 <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-border"><div className="h-full w-2/3 rounded-full bg-accent" /></div>

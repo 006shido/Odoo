@@ -32,7 +32,7 @@ function AdminPlansPage() {
     code: '',
     product_id: products[0]?.id || '',
     frequency: 'monthly' as BillingFrequency,
-    price: '149.00',
+    price: '999.00',
     setup_fee: '0.00',
     minimum_quantity: 1,
     allow_pause: true,
@@ -57,7 +57,7 @@ function AdminPlansPage() {
       code: `PLAN-CORE-${nextNum}`,
       product_id: products[0]?.id || '',
       frequency: 'monthly',
-      price: '149.00',
+      price: '999.00',
       setup_fee: '0.00',
       minimum_quantity: 1,
       allow_pause: true,
@@ -316,7 +316,7 @@ function AdminPlansPage() {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-text-primary">Recurring Price ($)</label>
+                  <label className="text-xs font-semibold text-text-primary">Recurring Price ({settings.currency_symbol})</label>
                   <input
                     type="text"
                     required

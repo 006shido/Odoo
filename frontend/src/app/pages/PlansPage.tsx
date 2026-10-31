@@ -25,7 +25,7 @@ export function PlansPage() {
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [frequency, setFrequency] = useState('monthly');
-  const [price, setPrice] = useState('3060.00');
+  const [price, setPrice] = useState('999.00');
   const [minQty, setMinQty] = useState('1');
   const [canPause, setCanPause] = useState(true);
   const [canCloseEarly, setCanCloseEarly] = useState(true);
@@ -46,7 +46,7 @@ export function PlansPage() {
             name: 'Business Professional Monthly',
             code: 'PLAN-MONTHLY-BIZ',
             billing_frequency: 'monthly',
-            price: '3060.00',
+            price: '999.00',
             minimum_quantity: 1,
             auto_close_on_expiry: false,
             can_close_early: true,
@@ -58,7 +58,7 @@ export function PlansPage() {
             name: 'Enterprise Yearly Contract',
             code: 'PLAN-YEARLY-ENT',
             billing_frequency: 'yearly',
-            price: '32000.00',
+            price: '9999.00',
             minimum_quantity: 5,
             auto_close_on_expiry: true,
             can_close_early: true,

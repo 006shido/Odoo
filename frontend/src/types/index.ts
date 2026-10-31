@@ -116,7 +116,7 @@ export interface Discount extends BaseEntity {
   code: string;
   name: string;
   type: DiscountType;
-  value: string; // e.g. "20" for 20% or "50.00" for fixed $50
+  value: string; // percentage or a fixed amount in the workspace currency
   min_subtotal: string;
   usage_limit?: number;
   usage_count: number;
