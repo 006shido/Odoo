@@ -55,11 +55,11 @@ export function DiscountsPage() {
     setIsCreateOpen(true);
   };
 
-  const handleSubmitCreate = (e: React.FormEvent) => {
+  const handleSubmitCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.code || !formData.name) return;
 
-    createDiscount({
+    await createDiscount({
       code: formData.code.toUpperCase().trim(),
       name: formData.name,
       type: formData.type,
@@ -77,9 +77,9 @@ export function DiscountsPage() {
     setIsCreateOpen(false);
   };
 
-  const handleToggleStatus = (discount: Discount) => {
+  const handleToggleStatus = async (discount: Discount) => {
     const nextStatus = discount.status === 'active' ? 'expired' : 'active';
-    updateDiscount(discount.id, { status: nextStatus });
+    await updateDiscount(discount.id, { status: nextStatus });
   };
 
   return (

@@ -32,7 +32,6 @@ export function CustomersPage() {
     quotations,
     payments,
     settings,
-    switchCustomerUser,
   } = useSubscription();
 
   const [search, setSearch] = useState('');
@@ -105,11 +104,11 @@ export function CustomersPage() {
     setIsEditOpen(true);
   };
 
-  const handleSubmitCreate = (e: React.FormEvent) => {
+  const handleSubmitCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.company_name || !formData.email) return;
 
-    createCustomer({
+    await createCustomer({
       name: formData.name || formData.company_name,
       company_name: formData.company_name,
       email: formData.email,
@@ -129,11 +128,11 @@ export function CustomersPage() {
     setIsCreateOpen(false);
   };
 
-  const handleSubmitEdit = (e: React.FormEvent) => {
+  const handleSubmitEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCustomer) return;
 
-    updateCustomer(selectedCustomer.id, {
+    await updateCustomer(selectedCustomer.id, {
       name: formData.name,
       company_name: formData.company_name,
       email: formData.email,
@@ -533,18 +532,7 @@ export function CustomersPage() {
 
             {/* Actions Footer */}
             <div className="flex items-center justify-between pt-4 border-t border-border/80">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  switchCustomerUser(selectedCustomer.id);
-                  setSelectedCustomer(null);
-                }}
-                className="rounded-xl"
-              >
-                <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-                Simulate Portal View as this Customer
-              </Button>
+
 
               <Button
                 size="sm"
@@ -798,8 +786,8 @@ export function CustomersPage() {
                   type="button"
                   variant="destructive"
                   size="sm"
-                  onClick={() => {
-                    archiveCustomer(selectedCustomer.id);
+                  onClick={async () => {
+                    await archiveCustomer(selectedCustomer.id);
                     setIsEditOpen(false);
                     setSelectedCustomer(null);
                   }}

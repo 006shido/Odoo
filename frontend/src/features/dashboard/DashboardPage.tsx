@@ -32,6 +32,7 @@ export function DashboardPage() {
     payments,
     customers,
     settings,
+    metrics,
     runBillingEngine,
   } = useSubscription();
 
@@ -43,21 +44,7 @@ export function DashboardPage() {
   const pausedSubs = subscriptions.filter((s) => s.status === 'paused');
 
   // Compute MRR
-  const mrrAmount = useMemo(() => {
-    let total = '0.00';
-    activeSubs.forEach((sub) => {
-      if (sub.frequency === 'yearly') {
-        const monthlyPortion = (parseFloat(sub.recurring_amount) / 12).toFixed(2);
-        total = addDecimals(total, monthlyPortion);
-      } else if (sub.frequency === 'weekly') {
-        const monthlyPortion = (parseFloat(sub.recurring_amount) * 4.33).toFixed(2);
-        total = addDecimals(total, monthlyPortion);
-      } else {
-        total = addDecimals(total, sub.recurring_amount);
-      }
-    });
-    return total;
-  }, [activeSubs]);
+  const mrrAmount = metrics.mrr;
 
   // Compute Total Collected Cash
   const totalCollected = useMemo(() => {
@@ -81,7 +68,7 @@ export function DashboardPage() {
 
   // Overdue Invoices
   const overdueInvoices = invoices.filter(
-    (inv) => inv.status !== 'void' && inv.status !== 'paid' && (inv.is_overdue || inv.due_date < '2026-10-31'),
+    (inv) => inv.status !== 'void' && inv.status !== 'paid' && (inv.is_overdue || inv.due_date < new Date().toISOString().slice(0, 10)),
   );
 
   // Upcoming Renewals
@@ -93,16 +80,9 @@ export function DashboardPage() {
   }, [activeSubs]);
 
   // Chart data for revenue trend
-  const revenueChartData = useMemo(() => {
-    return [
-      { month: 'May', invoiced: 3200, collected: 3000 },
-      { month: 'Jun', invoiced: 4100, collected: 3800 },
-      { month: 'Jul', invoiced: 4800, collected: 4600 },
-      { month: 'Aug', invoiced: 5600, collected: 5200 },
-      { month: 'Sep', invoiced: 6400, collected: 6100 },
-      { month: 'Oct', invoiced: 7800, collected: 7200 },
-    ];
-  }, []);
+  const revenueChartData = useMemo(() => metrics.revenue_months.slice(revenuePeriod === '6m' ? -6 : -12).map(row => ({
+    month: row.month, invoiced: Number(row.invoiced), collected: Number(row.collected),
+  })), [metrics, revenuePeriod]);
 
   // Status breakdown chart data
   const statusPieData = useMemo(() => {
@@ -114,12 +94,12 @@ export function DashboardPage() {
     ].filter((item) => item.value > 0);
   }, [activeSubs, pausedSubs, subscriptions]);
 
-  const handleQuickBillingRun = () => {
+  const handleQuickBillingRun = async () => {
     setIsBillingRunning(true);
-    setTimeout(() => {
-      runBillingEngine();
-      setIsBillingRunning(false);
-    }, 500);
+    try {
+      await runBillingEngine();
+    } catch { /* The shared request banner shows the server error. */ }
+    finally { setIsBillingRunning(false); }
   };
 
   return (
@@ -159,7 +139,7 @@ export function DashboardPage() {
             {formatCurrency(mrrAmount, settings.currency_symbol)}
           </div>
           <p className="text-xs text-success mt-1 flex items-center gap-1 font-medium">
-            <TrendingUp className="h-3 w-3" /> +18.4% this month
+            Normalized from active subscriptions
           </p>
         </div>
 

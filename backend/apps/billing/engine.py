@@ -1,4 +1,5 @@
 import calendar
+import uuid
 from datetime import date, timedelta
 from decimal import Decimal
 from django.db import transaction
@@ -74,24 +75,35 @@ def run_billing_for_date(target_date: date = None) -> BillingRun:
 
         try:
             with transaction.atomic():
-                # Check for eligible active discount
-                active_discount = Discount.objects.filter(
-                    is_active=True,
-                    scope=Discount.Scope.SUBSCRIPTION
-                ).order_by('-value').first()
+                # Reload under a row lock: another billing run may have advanced it.
+                sub = Subscription.objects.select_for_update().select_related('plan').get(pk=sub.pk)
+                if sub.status != Subscription.Status.ACTIVE or sub.next_billing_date > target_date:
+                    invoices_skipped += 1
+                    continue
+                period_start = sub.next_billing_date
+                period_end, next_billing = calculate_next_period_and_billing_date(period_start, sub.billing_frequency)
+                if sub.expiry_date and period_start > sub.expiry_date:
+                    sub.status = Subscription.Status.EXPIRED
+                    sub.save(update_fields=['status'])
+                    invoices_skipped += 1
+                    continue
+                active_discount = Discount.objects.select_for_update().filter(pk=sub.discount_id).first() if sub.discount_id else None
 
                 discount_amount = Decimal('0.00')
                 applied_discount_ref = None
 
-                if active_discount and active_discount.is_eligible(sub.subtotal):
-                    discount_amount = active_discount.calculate_discount_amount(sub.subtotal)
+                lines = list(sub.line_items.all())
+                quantity = sum(line.quantity for line in lines)
+                eligible_base = sum((line.total_price for line in lines if not active_discount or active_discount.scope != 'product' or line.product_id == active_discount.specific_product_id), Decimal('0'))
+                if active_discount and eligible_base > 0 and active_discount.is_eligible(sub.subtotal, quantity, active_discount.specific_product_id):
+                    discount_amount = active_discount.calculate_discount_amount(eligible_base)
                     applied_discount_ref = active_discount
                     active_discount.times_used += 1
                     active_discount.save(update_fields=['times_used'])
 
                 # Invoice numbering
                 inv_count = Invoice.objects.count() + 1
-                inv_number = f"INV-{timezone.now().year}-{inv_count:05d}"
+                inv_number = f"INV-{timezone.now().year}-{uuid.uuid4().hex[:12].upper()}"
 
                 net_subtotal = max(Decimal('0.00'), sub.subtotal - discount_amount)
                 tax_amount = (net_subtotal * (sub.tax_rate / Decimal('100.00'))).quantize(Decimal('0.01'))

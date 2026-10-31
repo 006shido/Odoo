@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from .models import CustomUser, Customer, validate_password_complexity
 
@@ -26,7 +27,10 @@ class RegisterSerializer(serializers.Serializer):
     company_name = serializers.CharField(max_length=255, required=False, allow_blank=True)
 
     def validate_password(self, value):
-        validate_password_complexity(value)
+        try:
+            validate_password_complexity(value)
+        except DjangoValidationError as error:
+            raise serializers.ValidationError(error.messages)
         return value
 
     def validate_email(self, value):

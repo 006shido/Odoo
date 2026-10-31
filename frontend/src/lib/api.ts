@@ -49,7 +49,12 @@ async function request<T>(
     }
   }
 
-  const csrfToken = getCSRFToken();
+  let csrfToken = getCSRFToken();
+  if (!['GET', 'HEAD', 'OPTIONS'].includes((restOptions.method || 'GET').toUpperCase()) && !csrfToken) {
+    const bootstrap = await fetch(`${API_BASE}/auth/csrf/`, { credentials: 'same-origin' });
+    if (!bootstrap.ok) throw new ApiError(bootstrap.status, bootstrap.statusText, null);
+    csrfToken = (await bootstrap.json()).csrfToken;
+  }
 
   const response = await fetch(url, {
     credentials: 'same-origin',

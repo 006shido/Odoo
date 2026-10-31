@@ -70,7 +70,7 @@ export function CustomerPlansPage() {
     (frequency === 'all' || plan.frequency === frequency),
   ), [plans, frequency, today]);
 
-  const handleRequestQuote = (plan: SubscriptionPlan) => {
+  const handleRequest = async (plan: SubscriptionPlan) => {
     if (!customer) {
       const subject = encodeURIComponent(`Plan enquiry: ${plan.name}`);
       const body = encodeURIComponent(`Hello Brightloop team,\n\nI’m interested in the ${plan.name} plan (${formatCurrency(plan.price, settings.currency_symbol)} / ${plan.frequency}). Please contact me with next steps.\n\n${currentUser.email}`);
@@ -81,7 +81,7 @@ export function CustomerPlansPage() {
     try {
       const expiry = new Date();
       expiry.setDate(expiry.getDate() + 14);
-      createQuotation({
+      await createQuotation({
         customer_id: customer.id,
         items: [{ product_id: plan.product_id, plan_id: plan.id, quantity: plan.minimum_quantity, unit_price: plan.price }],
         payment_terms: settings.default_payment_terms,

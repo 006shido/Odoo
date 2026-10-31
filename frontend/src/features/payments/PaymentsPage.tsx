@@ -91,7 +91,7 @@ export function PaymentsPage() {
     }));
   };
 
-  const handleSubmitRecord = (e: React.FormEvent) => {
+  const handleSubmitRecord = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
 
@@ -99,7 +99,7 @@ export function PaymentsPage() {
       .filter(([_, amt]) => compareDecimals(amt, '0.00') > 0)
       .map(([invoice_id, amount]) => ({ invoice_id, amount }));
 
-    const res = recordPayment({
+    const res = await recordPayment({
       customer_id: formCustomer,
       amount: formAmount,
       method: formMethod,

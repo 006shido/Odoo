@@ -10,31 +10,17 @@ import {
   LoaderCircle,
   LockKeyhole,
   Mail,
-  ShieldCheck,
   Sparkles,
   UserRound,
-  UsersRound,
   Zap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useSubscription } from '@/lib/store/subscriptionStore';
 import { api } from '@/lib/api';
-import type { AuthUser, UserRole } from '@/types';
+import type { AuthUser } from '@/types';
 
 type AuthMode = 'signin' | 'create' | 'reset';
-
-const demoAccounts: Array<{
-  role: UserRole;
-  label: string;
-  description: string;
-  email: string;
-  icon: typeof ShieldCheck;
-}> = [
-  { role: 'admin', label: 'Admin', description: 'Configure the workspace', email: 'admin@brightloop.io', icon: ShieldCheck },
-  { role: 'staff', label: 'Staff', description: 'Run daily operations', email: 'staff@brightloop.io', icon: UsersRound },
-  { role: 'customer', label: 'Customer', description: 'Explore plans and subscriptions', email: 'alex@acmecorp.com', icon: UserRound },
-];
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -51,9 +37,8 @@ export function LoginPage() {
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const startSession = (user?: AuthUser) => {
-    if (user) setCurrentUser(user);
-    localStorage.setItem('brightloop_session', 'active');
+  const startSession = async (user?: AuthUser) => {
+    if (user) await setCurrentUser(user);
     navigate(user?.role === 'customer' ? '/plans' : '/dashboard', { replace: true });
   };
 
@@ -76,7 +61,7 @@ export function LoginPage() {
       if (mode === 'signin') {
         const result = await api.post<{ user: AuthUser }>('/auth/login/', { email, password });
         const session = await api.get<{ customer_id?: string }>('/auth/me/');
-        startSession({ ...result.user, customer_id: session.customer_id });
+        await startSession({ ...result.user, customer_id: session.customer_id });
       } else if (mode === 'create') {
         const result = await api.post<{ user: AuthUser }>('/auth/register/', {
           email,
@@ -86,7 +71,7 @@ export function LoginPage() {
           company_name: company,
         });
         const session = await api.get<{ customer_id?: string }>('/auth/me/');
-        startSession({ ...result.user, customer_id: session.customer_id });
+        await startSession({ ...result.user, customer_id: session.customer_id });
       } else {
         const result = await api.post<{ message: string }>('/auth/forgot-password/', { email });
         setNotice(result.message || 'If an account exists, a reset link is on its way.');
@@ -95,26 +80,6 @@ export function LoginPage() {
       const data = (requestError as { data?: Record<string, unknown> })?.data;
       const detail = data?.error || data?.email || data?.password || data?.detail;
       setError(Array.isArray(detail) ? String(detail[0]) : typeof detail === 'string' ? detail : 'Could not connect. Please check your details and try again.');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const enterDemo = async (role: UserRole) => {
-    const demoEmail = demoAccounts.find((account) => account.role === role)?.email;
-    if (!demoEmail) return;
-    setError('');
-    setBusy(true);
-    try {
-      await api.get('/auth/csrf/');
-      const result = await api.post<{ user: AuthUser }>('/auth/login/', {
-        email: demoEmail,
-        password: 'Brightloop@2026',
-      });
-      const session = await api.get<{ customer_id?: string }>('/auth/me/');
-      startSession({ ...result.user, customer_id: session.customer_id });
-    } catch {
-      setError('Demo sign-in needs the backend demo accounts. Start Django and run `python manage.py seed_demo_data`, then try again.');
     } finally {
       setBusy(false);
     }
@@ -201,17 +166,7 @@ export function LoginPage() {
               {mode === 'signin' && <button type="button" onClick={() => { setMode('create'); setError(''); setNotice(''); }} className="font-medium text-[#737d78] hover:text-[#17211d]">New customer? <span className="text-emerald-800">Create account</span></button>}
             </div>
 
-            <div className="my-8 flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.12em] text-[#a1aaa5]"><span className="h-px flex-1 bg-[#e4e8e5]" />Hackathon demo access<span className="h-px flex-1 bg-[#e4e8e5]" /></div>
-            <div className="space-y-2">
-              {demoAccounts.map(({ role, label, description, email: demoEmail, icon: Icon }) => (
-                <button key={role} type="button" disabled={busy} onClick={() => void enterDemo(role)} className="group flex w-full items-center gap-3 rounded-2xl border border-[#e4e8e5] bg-white px-3.5 py-3 text-left transition hover:border-emerald-200 hover:bg-emerald-50/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 disabled:cursor-wait disabled:opacity-60">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f2f6f3] text-emerald-800 group-hover:bg-emerald-100"><Icon className="h-4 w-4" /></span>
-                  <span className="min-w-0 flex-1"><span className="block text-sm font-semibold">Continue as {label}</span><span className="block truncate text-xs text-[#858f89]">{description} · {demoEmail}</span></span>
-                  <ArrowRight className="h-4 w-4 text-[#a1aaa5] transition group-hover:translate-x-0.5 group-hover:text-emerald-800" />
-                </button>
-              ))}
-            </div>
-            <p className="mt-3 text-center text-[11px] text-[#9aa39e]">Demo access uses sample workspace data.</p>
+            <p className="mt-8 text-center text-[11px] text-[#9aa39e]">All accounts use secure server authentication.</p>
           </div>
           <div className="mx-auto flex w-full max-w-[440px] justify-between border-t border-[#e4e8e5] pt-4 text-[11px] text-[#9aa39e]"><span>© 2026 Brightloop</span><span className="inline-flex items-center gap-1"><LockKeyhole className="h-3 w-3" />Secure access</span></div>
         </section>

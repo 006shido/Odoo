@@ -2,8 +2,6 @@ import { useState, useMemo } from 'react';
 import {
   CreditCard,
   CheckCircle2,
-  Building,
-  Smartphone,
   ShieldCheck,
 } from 'lucide-react';
 import { useSubscription } from '@/lib/store/subscriptionStore';
@@ -12,14 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { cn } from '@/lib/utils';
-import type { Invoice, PaymentMethod } from '@/types';
-
-function paymentMethodLabel(method: PaymentMethod) {
-  if (method === 'upi') return 'UPI';
-  if (method === 'card') return 'Credit or debit card';
-  if (method === 'bank_transfer') return 'Net banking';
-  return method.replace('_', ' ');
-}
 
 export function CustomerPortalPage() {
   const {
@@ -32,17 +22,10 @@ export function CustomerPortalPage() {
     settings,
     acceptQuotation,
     rejectQuotation,
-    recordPayment,
     setSubscriptionAutoRenew,
   } = useSubscription();
 
   const [activeTab, setActiveTab] = useState<'subs' | 'invoices' | 'quotes' | 'payments' | 'profile'>('subs');
-  const [isPayModalOpen, setIsPayModalOpen] = useState(false);
-  const [payingInvoice, setPayingInvoice] = useState<Invoice | null>(null);
-  const [payMethod, setPayMethod] = useState<PaymentMethod>('upi');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentReference, setPaymentReference] = useState('');
-  const [paymentError, setPaymentError] = useState('');
   const today = new Date().toISOString().slice(0, 10);
 
   // Active customer identity
@@ -78,39 +61,6 @@ export function CustomerPortalPage() {
     return payments.filter((p) => p.customer_id === activeCustomer.id);
   }, [payments, activeCustomer]);
 
-  const handleSimulatePayment = (invoice: Invoice) => {
-    setPayingInvoice(invoice);
-    setPayMethod('upi');
-    setPaymentReference('');
-    setPaymentError('');
-    setIsPayModalOpen(true);
-  };
-
-  const handleConfirmPayment = () => {
-    if (!payingInvoice || isProcessing) return;
-    setIsProcessing(true);
-    setPaymentError('');
-    const reference = `BL-${payMethod.toUpperCase()}-${Date.now().toString().slice(-8)}`;
-
-    setTimeout(() => {
-      const result = recordPayment({
-        customer_id: activeCustomer.id,
-        amount: payingInvoice.balance_due,
-        method: payMethod,
-        reference,
-        received_date: new Date().toISOString().split('T')[0]!,
-        notes: `Simulated online payment via ${paymentMethodLabel(payMethod)} in Customer Portal.`,
-        allocations: [{ invoice_id: payingInvoice.id, amount: payingInvoice.balance_due }],
-      });
-
-      setIsProcessing(false);
-      if (result.error) {
-        setPaymentError(result.error);
-        return;
-      }
-      setPaymentReference(reference);
-    }, 600);
-  };
 
   const closePaymentModal = () => {
     if (isProcessing) return;
@@ -230,7 +180,7 @@ export function CustomerPortalPage() {
                         size="sm"
                         variant="outline"
                         className="h-8 rounded-lg text-xs"
-                        onClick={() => setSubscriptionAutoRenew(sub.id, !sub.auto_renew)}
+                        onClick={async () => await setSubscriptionAutoRenew(sub.id, !sub.auto_renew)}
                       >
                         Auto-renew {sub.auto_renew ? 'on · turn off' : 'off · turn on'}
                       </Button>
@@ -257,7 +207,7 @@ export function CustomerPortalPage() {
                   <th className="px-6 py-3.5">Status</th>
                   <th className="px-6 py-3.5">Total Amount</th>
                   <th className="px-6 py-3.5">Balance Due</th>
-                  <th className="px-6 py-3.5 text-right">Payment</th>
+                  <th className="px-6 py-3.5 text-right">Invoice</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
@@ -294,11 +244,11 @@ export function CustomerPortalPage() {
                         {inv.balance_due !== '0.00' && inv.status !== 'void' ? (
                           <Button
                             size="sm"
-                            onClick={() => handleSimulatePayment(inv)}
+                            onClick={() => window.open(`/api/v1/billing/invoices/${inv.id}/download_pdf/`, '_blank', 'noopener,noreferrer')}
                             className="rounded-xl text-xs shadow-xs"
                           >
                             <CreditCard className="h-3.5 w-3.5 mr-1.5" />
-                            Pay {formatCurrency(inv.balance_due, settings.currency_symbol)}
+                            Download Invoice
                           </Button>
                         ) : (
                           <span className="text-xs text-success font-semibold flex items-center justify-end gap-1">
@@ -353,7 +303,7 @@ export function CustomerPortalPage() {
                       <div className="flex items-center gap-2">
                         <Button
                           size="sm"
-                          onClick={() => acceptQuotation(q.id, `${activeCustomer.name} (Client Portal)`)}
+                          onClick={async () => await acceptQuotation(q.id, `${activeCustomer.name} (Client Portal)`)}
                           className="rounded-xl shadow-xs bg-success hover:bg-success/90 text-white"
                         >
                           <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
@@ -362,7 +312,7 @@ export function CustomerPortalPage() {
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => rejectQuotation(q.id)}
+                          onClick={async () => await rejectQuotation(q.id)}
                           className="rounded-xl"
                         >
                           Decline
@@ -452,85 +402,6 @@ export function CustomerPortalPage() {
         </div>
       )}
 
-      {/* Modal: Simulate Online Payment */}
-      {isPayModalOpen && payingInvoice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={closePaymentModal} />
-          <div className="relative w-full max-w-lg rounded-2xl bg-surface p-6 shadow-2xl border border-border z-10 animate-in zoom-in-95 duration-150 space-y-5">
-            {paymentReference ? (
-              <div className="py-3 text-center">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                  <CheckCircle2 className="h-8 w-8" />
-                </div>
-                <h3 className="text-xl font-bold text-text-primary">Payment successful</h3>
-                <p className="mt-1 text-sm text-text-secondary">Invoice {payingInvoice.number} is now paid.</p>
-                <p className="mt-5 text-3xl font-extrabold text-text-primary">
-                  {formatCurrency(payingInvoice.balance_due, settings.currency_symbol)}
-                </p>
-                <div className="mx-auto mt-5 max-w-sm rounded-xl bg-surface-secondary p-3 text-left text-xs">
-                  <div className="flex justify-between gap-3 py-1.5"><span className="text-text-secondary">Method</span><span className="font-semibold text-text-primary">{paymentMethodLabel(payMethod)}</span></div>
-                  <div className="flex justify-between gap-3 py-1.5"><span className="text-text-secondary">Reference</span><span className="font-mono text-text-primary">{paymentReference}</span></div>
-                  <div className="flex justify-between gap-3 py-1.5"><span className="text-text-secondary">Status</span><span className="font-semibold text-emerald-700">Simulated · Successful</span></div>
-                </div>
-                <p className="mt-3 text-[11px] text-text-tertiary">This is a demo transaction. No real money was charged.</p>
-                <Button onClick={closePaymentModal} className="mt-5 w-full rounded-xl">Done</Button>
-              </div>
-            ) : (
-              <>
-                <div>
-                  <h3 className="text-lg font-bold text-text-primary">Pay Invoice {payingInvoice.number}</h3>
-                  <p className="mt-1 text-xs text-text-secondary">Choose a payment method to simulate your payment securely.</p>
-                </div>
-
-                <div className="rounded-xl border border-border/70 bg-surface-secondary p-4 text-center">
-                  <span className="text-xs text-text-secondary">Amount due</span>
-                  <div className="mt-1 text-3xl font-extrabold text-text-primary">
-                    {formatCurrency(payingInvoice.balance_due, settings.currency_symbol)}
-                  </div>
-                </div>
-
-                <fieldset className="space-y-2" disabled={isProcessing}>
-                  <legend className="mb-2 text-xs font-semibold text-text-primary">Payment method</legend>
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                    {paymentOptions.map(({ method, label, hint, Icon }) => (
-                      <button
-                        key={method}
-                        type="button"
-                        aria-pressed={payMethod === method}
-                        onClick={() => setPayMethod(method)}
-                        className={cn(
-                          'flex items-center gap-3 rounded-xl border p-3 text-left transition-all sm:flex-col sm:items-start sm:gap-2',
-                          payMethod === method
-                            ? 'border-accent bg-accent/10 text-accent ring-1 ring-accent'
-                            : 'border-border bg-surface text-text-secondary hover:border-border-strong',
-                        )}
-                      >
-                        <Icon className="h-5 w-5 shrink-0" />
-                        <span><span className="block text-xs font-semibold">{label}</span><span className="mt-0.5 block text-[10px] opacity-75">{hint}</span></span>
-                      </button>
-                    ))}
-                  </div>
-                </fieldset>
-
-                <div className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2.5 text-[11px] leading-4 text-amber-900">
-                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
-                  <span>Hackathon demo mode: this creates a simulated payment record and updates the invoice. No real payment details or money are used.</span>
-                </div>
-
-                {paymentError && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{paymentError}</p>}
-                {isProcessing && <p role="status" className="text-center text-xs font-medium text-accent">Authorizing simulated {paymentMethodLabel(payMethod)} payment…</p>}
-
-                <div className="flex items-center justify-end gap-2 border-t border-border/80 pt-3">
-                  <Button variant="outline" size="sm" onClick={closePaymentModal} disabled={isProcessing} className="rounded-xl">Cancel</Button>
-                  <Button size="sm" onClick={handleConfirmPayment} disabled={isProcessing} className="rounded-xl shadow-xs">
-                    {isProcessing ? 'Processing…' : `Pay ${formatCurrency(payingInvoice.balance_due, settings.currency_symbol)}`}
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
