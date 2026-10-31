@@ -34,7 +34,7 @@ export function subtractDecimals(a: string | number, b: string | number): string
   return fromCents(toCents(a) - toCents(b));
 }
 
-/** Multiply decimal by quantity (integer or float) */
+/** Multiply decimal by factor */
 export function multiplyDecimals(amount: string | number, factor: number): string {
   const cents = toCents(amount);
   return fromCents(Math.round(cents * factor));
@@ -48,7 +48,7 @@ export function compareDecimals(a: string | number, b: string | number): number 
   return 0;
 }
 
-/** Calculate percentage discount: discountAmount = subtotal * (rate / 100) */
+/** Calculate percentage: result = amount * (percentage / 100) */
 export function calculatePercentage(amount: string | number, percentage: string | number): string {
   const amountCents = toCents(amount);
   const rate = parseFloat(percentage.toString()) || 0;
@@ -63,11 +63,11 @@ export function formatCurrency(amount: string | number, symbol: string = '$'): s
   const absCents = Math.abs(cents);
   const dollars = Math.floor(absCents / 100);
   const remainingCents = absCents % 100;
-  
+
   const formattedDollars = dollars.toLocaleString('en-US');
   const formattedCents = remainingCents.toString().padStart(2, '0');
   const sign = isNegative ? '-' : '';
-  
+
   return `${sign}${symbol}${formattedDollars}.${formattedCents}`;
 }
 
@@ -75,11 +75,13 @@ export function formatCurrency(amount: string | number, symbol: string = '$'): s
 export function normalizeDecimal(input: string): string {
   const clean = input.replace(/[^0-9.]/g, '');
   const parts = clean.split('.');
+  const first = parts[0] ?? '0';
+  const second = parts[1] ?? '00';
   if (parts.length > 2) {
-    return `${parts[0]}.${parts[1]}`;
+    return `${first}.${second}`;
   }
   if (parts.length === 2) {
-    return `${parts[0]}.${parts[1].slice(0, 2)}`;
+    return `${first}.${second.slice(0, 2)}`;
   }
   return clean;
 }

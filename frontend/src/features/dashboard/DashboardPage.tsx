@@ -9,7 +9,6 @@ import {
   ArrowUpRight,
   Plus,
   RefreshCw,
-  FileText,
   Calendar,
   ChevronRight,
   ShieldAlert,
@@ -27,7 +26,6 @@ import {
 } from 'recharts';
 import { useSubscription } from '@/lib/store/subscriptionStore';
 import { formatCurrency, addDecimals } from '@/lib/decimal';
-import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -38,7 +36,6 @@ export function DashboardPage() {
     subscriptions,
     invoices,
     payments,
-    quotations,
     customers,
     settings,
     runBillingEngine,
@@ -56,7 +53,6 @@ export function DashboardPage() {
     let total = '0.00';
     activeSubs.forEach((sub) => {
       if (sub.frequency === 'yearly') {
-        // Normalize yearly to monthly: yearly / 12
         const monthlyPortion = (parseFloat(sub.recurring_amount) / 12).toFixed(2);
         total = addDecimals(total, monthlyPortion);
       } else if (sub.frequency === 'weekly') {
@@ -261,7 +257,7 @@ export function DashboardPage() {
         </div>
       </div>
 
-      {/* Control Tower Alert Banner (if overdue invoices or paused subs) */}
+      {/* Control Tower Alert Banner */}
       {(overdueInvoices.length > 0 || pausedSubs.length > 0) && (
         <div className="p-4 rounded-2xl bg-warning-light/60 border border-warning/30 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -341,7 +337,7 @@ export function DashboardPage() {
                     color: '#FFFFFF',
                     fontSize: '12px',
                   }}
-                  formatter={(val: number | undefined) => [val ? `$${val.toLocaleString()}` : '$0', '']}
+                  formatter={(val: any) => [val ? `$${Number(val).toLocaleString()}` : '$0', '']}
                 />
                 <Area type="monotone" dataKey="invoiced" name="Invoiced" stroke="#007AFF" strokeWidth={2} fillOpacity={1} fill="url(#colorInvoiced)" />
                 <Area type="monotone" dataKey="collected" name="Collected Cash" stroke="#34C759" strokeWidth={2} fillOpacity={1} fill="url(#colorCollected)" />
@@ -463,7 +459,7 @@ export function DashboardPage() {
           </div>
         </div>
 
-        {/* Recent Transactions (Apple Wallet Style Rows) */}
+        {/* Recent Transactions */}
         <div className="apple-card p-6">
           <div className="flex items-center justify-between pb-4 border-b border-border/60">
             <div>

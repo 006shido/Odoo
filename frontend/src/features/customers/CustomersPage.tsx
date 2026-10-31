@@ -3,18 +3,14 @@ import {
   Users,
   Plus,
   Search,
-  Building,
   Mail,
   Phone,
   MapPin,
   ExternalLink,
   Edit2,
-  Archive,
-  CreditCard,
   FileText,
   Zap,
   X,
-  CheckCircle2,
 } from 'lucide-react';
 import { useSubscription } from '@/lib/store/subscriptionStore';
 import { formatCurrency } from '@/lib/decimal';
@@ -32,8 +28,6 @@ export function CustomersPage() {
     archiveCustomer,
     subscriptions,
     invoices,
-    quotations,
-    payments,
     settings,
     switchCustomerUser,
   } = useSubscription();
@@ -166,16 +160,6 @@ export function CustomersPage() {
     if (!selectedCustomer) return [];
     return invoices.filter((i) => i.customer_id === selectedCustomer.id);
   }, [invoices, selectedCustomer]);
-
-  const customerQuotes = useMemo(() => {
-    if (!selectedCustomer) return [];
-    return quotations.filter((q) => q.customer_id === selectedCustomer.id);
-  }, [quotations, selectedCustomer]);
-
-  const customerPayments = useMemo(() => {
-    if (!selectedCustomer) return [];
-    return payments.filter((p) => p.customer_id === selectedCustomer.id);
-  }, [payments, selectedCustomer]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">

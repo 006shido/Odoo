@@ -6,6 +6,7 @@ import type {
   Discount,
   Quotation,
   Subscription,
+  SubscriptionEvent,
   Invoice,
   Payment,
   PaymentAllocation,
@@ -775,7 +776,7 @@ const initialSubscriptions: Subscription[] = [
     frequency: 'monthly',
     status: 'active',
     start_date: '2026-09-05',
-    next_billing_date: '2026-11-05', // In 5 days!
+    next_billing_date: '2026-11-05',
     last_billing_date: '2026-10-05',
     items: [
       {
@@ -887,7 +888,7 @@ const initialInvoices: Invoice[] = [
     status: 'issued',
     is_overdue: true,
     issue_date: '2026-09-01',
-    due_date: '2026-10-01', // Overdue!
+    due_date: '2026-10-01',
     items: [
       {
         id: 'iitem-3',
@@ -1057,41 +1058,27 @@ const initialAuditLog: AuditLogItem[] = [
   },
 ];
 
-// Context Type definition
 export interface SubscriptionContextType {
-  // Current user & role state
   currentUser: AuthUser;
   allUsers: AuthUser[];
   setCurrentUser: (user: AuthUser) => void;
   switchRole: (role: UserRole) => void;
   switchCustomerUser: (customerId: string) => void;
-
-  // Workspace Settings
   settings: WorkspaceSettings;
   updateSettings: (newSettings: Partial<WorkspaceSettings>) => void;
-
-  // Customers
   customers: Customer[];
   createCustomer: (data: Omit<Customer, 'id' | 'created_at' | 'updated_at'>) => Customer;
   updateCustomer: (id: string, data: Partial<Customer>) => void;
   archiveCustomer: (id: string) => void;
-
-  // Products
   products: Product[];
   createProduct: (data: Omit<Product, 'id' | 'created_at' | 'updated_at'>) => Product;
   updateProduct: (id: string, data: Partial<Product>) => void;
-
-  // Plans
   plans: SubscriptionPlan[];
   createPlan: (data: Omit<SubscriptionPlan, 'id' | 'created_at' | 'updated_at'>) => SubscriptionPlan;
   updatePlan: (id: string, data: Partial<SubscriptionPlan>) => void;
-
-  // Discounts
   discounts: Discount[];
   createDiscount: (data: Omit<Discount, 'id' | 'created_at' | 'updated_at' | 'usage_count'>) => Discount;
   updateDiscount: (id: string, data: Partial<Discount>) => void;
-
-  // Quotations
   quotations: Quotation[];
   createQuotation: (data: {
     customer_id: string;
@@ -1105,8 +1092,6 @@ export interface SubscriptionContextType {
   acceptQuotation: (id: string, acceptedBy?: string) => void;
   rejectQuotation: (id: string) => void;
   convertQuotationToSubscription: (quotationId: string) => { subscription: Subscription | null; error?: string };
-
-  // Subscriptions
   subscriptions: Subscription[];
   createSubscription: (data: {
     customer_id: string;
@@ -1120,15 +1105,11 @@ export interface SubscriptionContextType {
   resumeSubscription: (id: string) => void;
   renewSubscription: (id: string) => void;
   closeSubscription: (id: string) => void;
-
-  // Invoices & Recurring Billing Engine
   invoices: Invoice[];
   billingRuns: BillingRun[];
   runBillingEngine: (targetDate?: string) => BillingRun;
   issueInvoice: (id: string) => void;
   voidInvoice: (id: string) => void;
-
-  // Payments & Allocation
   payments: Payment[];
   recordPayment: (data: {
     customer_id: string;
@@ -1139,14 +1120,10 @@ export interface SubscriptionContextType {
     notes?: string;
     allocations?: Array<{ invoice_id: string; amount: string }>;
   }) => { payment: Payment; error?: string };
-
-  // Notifications & Audit Log
   notifications: NotificationItem[];
   markNotificationAsRead: (id: string) => void;
   clearAllNotifications: () => void;
   auditLog: AuditLogItem[];
-
-  // Demo helper
   resetToDefaults: () => void;
 }
 
@@ -1213,7 +1190,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     loadFromStorage<AuditLogItem[]>('auditLog', initialAuditLog),
   );
 
-  // Sync to localStorage
   useEffect(() => saveToStorage('currentUser', currentUser), [currentUser]);
   useEffect(() => saveToStorage('settings', settings), [settings]);
   useEffect(() => saveToStorage('customers', customers), [customers]);
@@ -1228,7 +1204,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   useEffect(() => saveToStorage('notifications', notifications), [notifications]);
   useEffect(() => saveToStorage('auditLog', auditLog), [auditLog]);
 
-  // Log an audit event
   const addAuditLog = (action: string, entity_type: string, entity_id: string, details: string) => {
     const newLog: AuditLogItem = {
       id: `audit-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
@@ -1242,7 +1217,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     setAuditLogState((prev) => [newLog, ...prev]);
   };
 
-  // Add a toast notification
   const addNotification = (title: string, message: string, type: 'info' | 'success' | 'warning' | 'error', link?: string) => {
     const newNotif: NotificationItem = {
       id: `notif-${Date.now()}`,
@@ -1256,7 +1230,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     setNotificationsState((prev) => [newNotif, ...prev]);
   };
 
-  // Role switching
   const switchRole = (role: UserRole) => {
     const targetUser = allUsers.find((u) => u.role === role) || {
       id: `user-${role}`,
@@ -1288,14 +1261,12 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     addAuditLog('SWITCH_CUSTOMER', 'AUTH', customerId, `Switched customer portal to ${customer.company_name}`);
   };
 
-  // Settings
   const updateSettings = (newSettings: Partial<WorkspaceSettings>) => {
     setSettingsState((prev) => ({ ...prev, ...newSettings }));
     addAuditLog('UPDATE_SETTINGS', 'WORKSPACE', 'settings', 'Workspace settings updated');
     addNotification('Settings Saved', 'Workspace configuration updated successfully.', 'success');
   };
 
-  // Customers CRUD
   const createCustomer = (data: Omit<Customer, 'id' | 'created_at' | 'updated_at'>): Customer => {
     const id = `cust-${Date.now()}`;
     const newCust: Customer = {
@@ -1325,7 +1296,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     addNotification('Customer Archived', 'Customer status updated to archived.', 'info');
   };
 
-  // Products CRUD
   const createProduct = (data: Omit<Product, 'id' | 'created_at' | 'updated_at'>): Product => {
     const id = `prod-${Date.now()}`;
     const newProd: Product = {
@@ -1346,7 +1316,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     addAuditLog('UPDATE_PRODUCT', 'PRODUCT', id, 'Updated product catalogue entry');
   };
 
-  // Plans CRUD
   const createPlan = (data: Omit<SubscriptionPlan, 'id' | 'created_at' | 'updated_at'>): SubscriptionPlan => {
     const id = `plan-${Date.now()}`;
     const newPlan: SubscriptionPlan = {
@@ -1368,7 +1337,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     addAuditLog('UPDATE_PLAN', 'PLAN', id, 'Updated plan pricing and terms');
   };
 
-  // Discounts CRUD
   const createDiscount = (data: Omit<Discount, 'id' | 'created_at' | 'updated_at' | 'usage_count'>): Discount => {
     const id = `disc-${Date.now()}`;
     const newDisc: Discount = {
@@ -1390,7 +1358,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     );
   };
 
-  // Quotations
   const createQuotation = (data: {
     customer_id: string;
     items: Array<{ product_id: string; plan_id?: string; quantity: number; unit_price: string }>;
@@ -1423,7 +1390,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       };
     });
 
-    // Discount calculation
     let discountAmount = '0.00';
     let discountCode: string | undefined;
     if (data.discount_id) {
@@ -1438,7 +1404,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       }
     }
 
-    // Base subtotal after discount
     const discountedSubtotal = compareDecimals(subtotal, discountAmount) > 0
       ? subtractDecimals(subtotal, discountAmount)
       : '0.00';
@@ -1513,7 +1478,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     addNotification('Quotation Rejected', `${quote?.number} marked as rejected.`, 'error', '/quotations');
   };
 
-  // Convert Quotation to Subscription (Strictly idempotent)
   const convertQuotationToSubscription = (quotationId: string): { subscription: Subscription | null; error?: string } => {
     const quote = quotations.find((q) => q.id === quotationId);
     if (!quote) return { subscription: null, error: 'Quotation not found' };
@@ -1530,12 +1494,10 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     const subNumber = `${settings.subscription_prefix}2026-${nextSubNum}`;
     const today = new Date().toISOString().split('T')[0]!;
 
-    // Calculate next billing date: +1 month by default
     const nextDate = new Date();
     nextDate.setMonth(nextDate.getMonth() + 1);
     const nextBillingDate = nextDate.toISOString().split('T')[0]!;
 
-    // Build subscription line items snapshot
     const subItems: SubscriptionItem[] = quote.items.map((qi, idx) => ({
       id: `sitem-${Date.now()}-${idx}`,
       product_name: qi.product_name,
@@ -1544,7 +1506,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       amount: qi.amount,
     }));
 
-    // Find main plan from quote items or fallback
     const matchedPlan = plans.find((p) => p.id === quote.items[0]?.plan_id) || plans[0]!;
 
     const newSub: Subscription = {
@@ -1588,7 +1549,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       updated_at: new Date().toISOString(),
     };
 
-    // Mark quotation as converted
     setQuotationsState((prev) =>
       prev.map((q) =>
         q.id === quotationId
@@ -1602,10 +1562,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       ),
     );
 
-    // Save subscription
     setSubscriptionsState((prev) => [newSub, ...prev]);
 
-    // Also automatically generate the first invoice for this subscription!
     const nextInvNum = (invoices.length + 1).toString().padStart(3, '0');
     const invoiceNumber = `${settings.invoice_prefix}2026-${nextInvNum}`;
     const dueDate = new Date();
@@ -1663,7 +1621,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     return { subscription: newSub };
   };
 
-  // Subscriptions Lifecycle
   const createSubscription = (data: {
     customer_id: string;
     plan_id: string;
@@ -1785,7 +1742,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     setSubscriptionsState((prev) =>
       prev.map((s) => {
         if (s.id !== id) return s;
-        // Resume begins a new full period from today
         const today = new Date().toISOString().split('T')[0]!;
         const nextDate = new Date();
         if (s.frequency === 'daily') nextDate.setDate(nextDate.getDate() + 1);
@@ -1865,34 +1821,30 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     addNotification('Subscription Closed', 'Subscription marked as closed.', 'info');
   };
 
-  // Recurring Billing Engine
   const runBillingEngine = (targetDate?: string): BillingRun => {
     const runDate = targetDate || new Date().toISOString().split('T')[0]!;
     const log: string[] = [];
     let processed = 0;
     let created = 0;
     let skipped = 0;
-    let errors = 0;
+    const errors = 0;
 
     log.push(`[${new Date().toISOString()}] Billing run initialized for target date: ${runDate}`);
 
     const newInvoices: Invoice[] = [];
     const updatedSubscriptions: Subscription[] = subscriptions.map((sub) => {
-      // Only process Active subscriptions
       if (sub.status !== 'active') {
         return sub;
       }
 
       processed++;
 
-      // Check if due: next_billing_date <= runDate
       if (sub.next_billing_date > runDate) {
         log.push(`[SKIP] Subscription ${sub.number} (${sub.customer_name}): next billing date ${sub.next_billing_date} is in the future.`);
         skipped++;
         return sub;
       }
 
-      // Calculate period boundaries
       const periodStart = sub.next_billing_date;
       const periodEndDateObj = new Date(periodStart);
       if (sub.frequency === 'daily') periodEndDateObj.setDate(periodEndDateObj.getDate() + 1);
@@ -1901,7 +1853,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       else periodEndDateObj.setMonth(periodEndDateObj.getMonth() + 1);
       const periodEnd = periodEndDateObj.toISOString().split('T')[0]!;
 
-      // Idempotency check: Does an invoice already exist for this subscription + periodStart?
       const alreadyInvoiced = invoices.some(
         (inv) => inv.subscription_id === sub.id && inv.billing_period_start === periodStart,
       );
@@ -1912,7 +1863,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         return sub;
       }
 
-      // Generate Invoice
       const nextInvNum = (invoices.length + newInvoices.length + 1).toString().padStart(3, '0');
       const invoiceNumber = `${settings.invoice_prefix}2026-${nextInvNum}`;
       const dueDateObj = new Date(runDate);
@@ -1957,7 +1907,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       created++;
       log.push(`[SUCCESS] Generated Invoice ${invoiceNumber} ($${sub.total_recurring}) for ${sub.customer_name} (${sub.number}).`);
 
-      // Advance subscription next_billing_date
       const newNextBilling = periodEnd;
       const billedEvent: SubscriptionEvent = {
         id: `ev-${Date.now()}-${newInvoices.length}`,
@@ -2022,7 +1971,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     addNotification('Invoice Voided', 'Invoice has been voided.', 'warning');
   };
 
-  // Record Payment and Allocate to Invoices
   const recordPayment = (data: {
     customer_id: string;
     amount: string;
@@ -2035,7 +1983,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     const customer = customers.find((c) => c.id === data.customer_id);
     if (!customer) return { payment: {} as Payment, error: 'Customer not found' };
 
-    // Validate allocation amounts
     let totalAllocated = '0.00';
     const cleanAllocations: PaymentAllocation[] = [];
 
@@ -2045,7 +1992,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         const invoice = invoices.find((inv) => inv.id === item.invoice_id);
         if (!invoice) return { payment: {} as Payment, error: `Invoice ${item.invoice_id} not found` };
 
-        // Verify allocation doesn't exceed invoice balance
         if (compareDecimals(item.amount, invoice.balance_due) > 0) {
           return {
             payment: {} as Payment,
@@ -2063,7 +2009,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         });
       }
 
-      // Verify allocation doesn't exceed total payment
       if (compareDecimals(totalAllocated, data.amount) > 0) {
         return {
           payment: {} as Payment,
@@ -2093,7 +2038,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       updated_at: new Date().toISOString(),
     };
 
-    // Apply allocations to invoices transactionally
     if (cleanAllocations.length > 0) {
       setInvoicesState((prev) =>
         prev.map((inv) => {
@@ -2135,7 +2079,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     return { payment: newPayment };
   };
 
-  // Notifications
   const markNotificationAsRead = (id: string) => {
     setNotificationsState((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
@@ -2146,7 +2089,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     setNotificationsState((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
-  // Reset to initial demo state
   const resetToDefaults = () => {
     setCurrentUserState(initialUsers[0]!);
     setSettingsState(initialSettings);

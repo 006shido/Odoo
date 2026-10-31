@@ -21,7 +21,6 @@ import {
   Menu,
   X,
   ExternalLink,
-  Check,
   CheckCircle2,
   AlertTriangle,
   Info,

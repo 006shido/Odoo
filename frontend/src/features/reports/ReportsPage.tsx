@@ -1,15 +1,5 @@
 import { useState, useMemo } from 'react';
-import {
-  BarChart3,
-  TrendingUp,
-  Download,
-  Calendar,
-  Layers,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  FileSpreadsheet,
-} from 'lucide-react';
+import { Download } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -17,18 +7,14 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
 } from 'recharts';
 import { useSubscription } from '@/lib/store/subscriptionStore';
 import { formatCurrency, addDecimals } from '@/lib/decimal';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 export function ReportsPage() {
-  const { subscriptions, invoices, payments, plans, settings } = useSubscription();
+  const { subscriptions, invoices, payments, settings } = useSubscription();
   const [dateRange, setDateRange] = useState<'30d' | 'quarter' | 'ytd' | 'all'>('ytd');
 
   // Compute MRR & ARR
@@ -310,7 +296,7 @@ export function ReportsPage() {
                     color: '#FFFFFF',
                     fontSize: '12px',
                   }}
-                  formatter={(val: number | undefined) => [val ? `$${val.toLocaleString()}` : '$0', 'Total Recurring']}
+                  formatter={(val: any) => [val ? `$${Number(val).toLocaleString()}` : '$0', 'Total Recurring']}
                 />
                 <Bar dataKey="total" fill="#007AFF" radius={[0, 8, 8, 0]} />
               </BarChart>

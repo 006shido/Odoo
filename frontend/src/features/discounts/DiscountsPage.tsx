@@ -3,17 +3,11 @@ import {
   Percent,
   Plus,
   Search,
-  Tag,
-  Calendar,
-  CheckCircle2,
-  Clock,
-  X,
 } from 'lucide-react';
 import { useSubscription } from '@/lib/store/subscriptionStore';
 import { formatCurrency } from '@/lib/decimal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 import type { Discount, DiscountType } from '@/types';
 
 export function DiscountsPage() {
