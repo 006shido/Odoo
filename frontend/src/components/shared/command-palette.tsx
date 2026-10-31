@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useSubscription } from '@/lib/store/subscriptionStore';
 import { useTheme } from '@/lib/theme';
+import { formatCurrency } from '@/lib/decimal';
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -25,7 +26,7 @@ interface CommandPaletteProps {
 export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
-  const { customers, subscriptions, invoices, quotations, plans, switchRole } = useSubscription();
+  const { customers, subscriptions, invoices, quotations, plans, settings, switchRole } = useSubscription();
   const { toggleTheme, isDark } = useTheme();
 
   // Listen for Escape key
@@ -151,7 +152,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       if (inv.number.toLowerCase().includes(q) || inv.customer_name.toLowerCase().includes(q)) {
         matches.push({
           id: inv.id,
-          title: `${inv.number} - $${inv.total}`,
+          title: `${inv.number} - ${formatCurrency(inv.total, settings.currency_symbol)}`,
           subtitle: `Invoice • ${inv.customer_name} • ${inv.status}`,
           category: 'Invoices',
           icon: FileText,
@@ -165,7 +166,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       if (quo.number.toLowerCase().includes(q) || quo.customer_name.toLowerCase().includes(q)) {
         matches.push({
           id: quo.id,
-          title: `${quo.number} - $${quo.total}`,
+          title: `${quo.number} - ${formatCurrency(quo.total, settings.currency_symbol)}`,
           subtitle: `Quotation • ${quo.customer_name} • ${quo.status}`,
           category: 'Quotations',
           icon: FileText,
@@ -180,7 +181,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         matches.push({
           id: p.id,
           title: p.name,
-          subtitle: `Plan • $${p.price}/${p.frequency} • ${p.product_name}`,
+          subtitle: `Plan • ${formatCurrency(p.price, settings.currency_symbol)}/${p.frequency} • ${p.product_name}`,
           category: 'Plans',
           icon: Layers,
           path: '/plans',
@@ -189,7 +190,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     });
 
     return { actions: [], matches: matches.slice(0, 8) };
-  }, [query, customers, subscriptions, invoices, quotations, plans, isDark, toggleTheme, switchRole, navigate, onClose]);
+  }, [query, customers, subscriptions, invoices, quotations, plans, settings.currency_symbol, isDark, toggleTheme, switchRole, navigate, onClose]);
 
   if (!isOpen) return null;
 

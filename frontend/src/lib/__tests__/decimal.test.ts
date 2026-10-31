@@ -50,10 +50,10 @@ describe('Decimal Financial Calculations', () => {
   });
 
   it('formats currency with symbol and thousands separators', () => {
-    expect(formatCurrency('1250.50')).toBe('$1,250.50');
-    expect(formatCurrency('0.00')).toBe('$0.00');
+    expect(formatCurrency('1250.50')).toBe('₹1,250.50');
+    expect(formatCurrency('0.00')).toBe('₹0.00');
     expect(formatCurrency('5000000.00', '€')).toBe('€5,000,000.00');
-    expect(formatCurrency('-25.00')).toBe('-$25.00');
+    expect(formatCurrency('-25.00')).toBe('-₹25.00');
   });
 });
 

@@ -278,7 +278,7 @@ export function DiscountsPage() {
                     className="w-full px-3 py-2 rounded-xl border border-border text-sm text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-accent"
                   >
                     <option value="percentage">Percentage (%)</option>
-                    <option value="fixed">Fixed Currency Amount ($)</option>
+                    <option value="fixed">Fixed Currency Amount ({settings.currency_symbol})</option>
                   </select>
                 </div>
                 <div className="space-y-1">
@@ -296,7 +296,7 @@ export function DiscountsPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-text-primary">Minimum Subtotal ($)</label>
+                  <label className="text-xs font-semibold text-text-primary">Minimum Subtotal ({settings.currency_symbol})</label>
                   <input
                     type="text"
                     value={formData.min_subtotal}

@@ -286,7 +286,7 @@ export function ReportsPage() {
           <div className="h-64 mt-4 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={planRevenueData} layout="vertical" margin={{ top: 10, right: 30, left: 40, bottom: 0 }}>
-                <XAxis type="number" stroke="#8E8E93" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}`} />
+                <XAxis type="number" stroke="#8E8E93" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => formatCurrency(v, settings.currency_symbol)} />
                 <YAxis dataKey="name" type="category" stroke="#8E8E93" fontSize={11} tickLine={false} axisLine={false} width={120} />
                 <Tooltip
                   contentStyle={{
@@ -296,7 +296,7 @@ export function ReportsPage() {
                     color: '#FFFFFF',
                     fontSize: '12px',
                   }}
-                  formatter={(val: any) => [val ? `$${Number(val).toLocaleString()}` : '$0', 'Total Recurring']}
+                  formatter={(val: any) => [formatCurrency(val || 0, settings.currency_symbol), 'Total Recurring']}
                 />
                 <Bar dataKey="total" fill="#007AFF" radius={[0, 8, 8, 0]} />
               </BarChart>

@@ -56,15 +56,15 @@ export function calculatePercentage(amount: string | number, percentage: string 
   return fromCents(discountCents);
 }
 
-/** Format currency with symbol, e.g. "$1,250.00" */
-export function formatCurrency(amount: string | number, symbol: string = '$'): string {
+/** Format currency with its workspace symbol, e.g. "₹1,250.00" */
+export function formatCurrency(amount: string | number, symbol: string = '₹'): string {
   const cents = toCents(amount);
   const isNegative = cents < 0;
   const absCents = Math.abs(cents);
   const dollars = Math.floor(absCents / 100);
   const remainingCents = absCents % 100;
 
-  const formattedDollars = dollars.toLocaleString('en-US');
+  const formattedDollars = dollars.toLocaleString(symbol === '₹' ? 'en-IN' : 'en-US');
   const formattedCents = remainingCents.toString().padStart(2, '0');
   const sign = isNegative ? '-' : '';
 

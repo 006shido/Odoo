@@ -242,7 +242,7 @@ export function DashboardPage() {
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="month" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}`} />
+                <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => formatCurrency(v, settings.currency_symbol)} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: '#0f172a',
@@ -251,7 +251,7 @@ export function DashboardPage() {
                     color: '#ffffff',
                     fontSize: '12px',
                   }}
-                  formatter={(val: any) => [val ? `$${Number(val).toLocaleString()}` : '$0', '']}
+                  formatter={(val: any) => [formatCurrency(val || 0, settings.currency_symbol), '']}
                 />
                 <Area type="monotone" dataKey="invoiced" name="Invoiced" stroke="#2563eb" strokeWidth={2} fillOpacity={1} fill="url(#colorInvoiced)" />
                 <Area type="monotone" dataKey="collected" name="Collected" stroke="#16a34a" strokeWidth={2} fillOpacity={1} fill="url(#colorCollected)" />

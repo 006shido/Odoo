@@ -27,7 +27,9 @@ import {
   multiplyDecimals,
   calculatePercentage,
   compareDecimals,
+  formatCurrency,
 } from '@/lib/decimal';
+import { localizeWorkspaceToInr, type PricingWorkspace } from '@/lib/pricingLocalization';
 
 function addBillingInterval(value: string | Date, frequency: BillingFrequency): string {
   const date = value instanceof Date ? new Date(value) : new Date(`${value}T00:00:00Z`);
@@ -61,9 +63,9 @@ const initialSettings: WorkspaceSettings = {
     country: 'United States',
   },
   tax_id: 'US-EIN-88491028',
-  currency: 'USD',
-  currency_symbol: '$',
-  billing_timezone: 'America/New_York (UTC-5)',
+  currency: 'INR',
+  currency_symbol: '₹',
+  billing_timezone: 'Asia/Kolkata (UTC+5:30)',
   default_tax_rate: '10.0',
   default_payment_terms: 'Net 30',
   quotation_prefix: 'QUO-',
@@ -121,7 +123,7 @@ const initialCustomers: Customer[] = [
     },
     tax_id: 'US-EIN-9481928',
     status: 'active',
-    currency: 'USD',
+    currency: 'INR',
     portal_user_id: 'user-cust',
     notes: 'Enterprise account with dedicated account manager. Billed via ACH or Card.',
     created_at: '2026-08-15T09:30:00Z',
@@ -142,7 +144,7 @@ const initialCustomers: Customer[] = [
     },
     tax_id: 'US-EIN-8392019',
     status: 'active',
-    currency: 'USD',
+    currency: 'INR',
     notes: 'High-growth AI laboratory running cluster models.',
     created_at: '2026-07-10T11:15:00Z',
     updated_at: '2026-10-20T10:00:00Z',
@@ -162,7 +164,7 @@ const initialCustomers: Customer[] = [
     },
     tax_id: 'US-EIN-4829102',
     status: 'active',
-    currency: 'USD',
+    currency: 'INR',
     notes: 'Requested seasonal pause on add-on analytics modules.',
     created_at: '2026-06-01T08:00:00Z',
     updated_at: '2026-10-28T16:45:00Z',
@@ -182,7 +184,7 @@ const initialCustomers: Customer[] = [
     },
     tax_id: 'US-EIN-7382910',
     status: 'active',
-    currency: 'USD',
+    currency: 'INR',
     notes: 'Multi-regional logistics provider using API gateway tier.',
     created_at: '2026-09-05T14:30:00Z',
     updated_at: '2026-10-25T11:20:00Z',
@@ -202,7 +204,7 @@ const initialCustomers: Customer[] = [
     },
     tax_id: 'US-EIN-1928374',
     status: 'lead',
-    currency: 'USD',
+    currency: 'INR',
     notes: 'Quotation sent and accepted. Pending initial subscription activation.',
     created_at: '2026-10-20T10:00:00Z',
     updated_at: '2026-10-30T17:10:00Z',
@@ -418,7 +420,7 @@ const initialDiscounts: Discount[] = [
   {
     id: 'disc-2',
     code: 'ANNUAL500',
-    name: 'Annual Enterprise Credit $500',
+    name: 'Annual Enterprise Credit ₹1,999',
     type: 'fixed',
     value: '500.00',
     min_subtotal: '2000.00',
@@ -890,7 +892,7 @@ const initialInvoices: Invoice[] = [
     total: '5489.00',
     paid_amount: '2500.00',
     balance_due: '2989.00',
-    notes: 'Initial wire transfer received for $2,500. Remainder due on Nov 10.',
+    notes: 'Initial bank transfer received as partial payment. Remaining balance due on Nov 10.',
     created_at: '2026-10-10T09:00:00Z',
     updated_at: '2026-10-15T15:30:00Z',
   },
@@ -1029,7 +1031,7 @@ const initialNotifications: NotificationItem[] = [
   {
     id: 'notif-2',
     title: 'Invoice Overdue Alert',
-    message: 'Invoice INV-2026-003 ($218.90) for Horizon Robotics is overdue by 30 days.',
+    message: 'Invoice INV-2026-003 (₹768.90) for Horizon Robotics is overdue by 30 days.',
     type: 'warning',
     timestamp: '5 hours ago',
     read: false,
@@ -1064,7 +1066,7 @@ const initialAuditLog: AuditLogItem[] = [
     entity_type: 'QUOTATION',
     entity_id: 'quo-3',
     timestamp: '2026-10-28T16:00:00Z',
-    details: 'Customer accepted quotation QUO-2026-003 ($163.90)',
+    details: 'Customer accepted quotation QUO-2026-003 (₹1,098.90)',
   },
   {
     id: 'audit-3',
@@ -1076,6 +1078,18 @@ const initialAuditLog: AuditLogItem[] = [
     details: 'Paused subscription SUB-2026-003 per customer request',
   },
 ];
+
+const inrInitialWorkspace: PricingWorkspace = localizeWorkspaceToInr({
+  settings: initialSettings,
+  customers: initialCustomers,
+  products: initialProducts,
+  plans: initialPlans,
+  discounts: initialDiscounts,
+  quotations: initialQuotations,
+  subscriptions: initialSubscriptions,
+  invoices: initialInvoices,
+  payments: initialPayments,
+});
 
 export interface SubscriptionContextType {
   currentUser: AuthUser;
@@ -1119,6 +1133,12 @@ export interface SubscriptionContextType {
     auto_renew?: boolean;
     source_quotation_id?: string;
   }) => Subscription;
+  purchasePlan: (data: {
+    customer_id: string;
+    plan_id: string;
+    method: Payment['method'];
+    reference: string;
+  }) => { subscription: Subscription | null; invoice: Invoice | null; payment: Payment | null; error?: string };
   activateSubscription: (id: string) => void;
   pauseSubscription: (id: string, reason: string) => void;
   resumeSubscription: (id: string) => void;
@@ -1149,6 +1169,8 @@ export interface SubscriptionContextType {
 const SubscriptionContext = createContext<SubscriptionContextType | null>(null);
 
 const STORAGE_KEY_PREFIX = 'brightloop_v2_';
+const INR_PRICING_VERSION_KEY = 'brightloop_inr_pricing_version';
+const INR_PRICING_VERSION = '2';
 
 function loadFromStorage<T>(key: string, fallback: T): T {
   try {
@@ -1168,37 +1190,55 @@ function saveToStorage<T>(key: string, value: T): void {
 }
 
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
+  const [initialWorkspace] = useState<PricingWorkspace>(() => {
+    const storedSettings = loadFromStorage<WorkspaceSettings | null>('settings', null);
+    const pricingVersion = localStorage.getItem(INR_PRICING_VERSION_KEY);
+    const hasLegacyCurrency = Boolean(storedSettings && storedSettings.currency !== 'INR');
+    const needsPricingMigration = Boolean(storedSettings && pricingVersion !== INR_PRICING_VERSION);
+    const storedWorkspace: PricingWorkspace = {
+      settings: storedSettings ?? inrInitialWorkspace.settings,
+      customers: loadFromStorage<Customer[]>('customers', hasLegacyCurrency ? initialCustomers : inrInitialWorkspace.customers),
+      products: loadFromStorage<Product[]>('products', hasLegacyCurrency ? initialProducts : inrInitialWorkspace.products),
+      plans: loadFromStorage<SubscriptionPlan[]>('plans', hasLegacyCurrency ? initialPlans : inrInitialWorkspace.plans),
+      discounts: loadFromStorage<Discount[]>('discounts', hasLegacyCurrency ? initialDiscounts : inrInitialWorkspace.discounts),
+      quotations: loadFromStorage<Quotation[]>('quotations', hasLegacyCurrency ? initialQuotations : inrInitialWorkspace.quotations),
+      subscriptions: loadFromStorage<Subscription[]>('subscriptions', hasLegacyCurrency ? initialSubscriptions : inrInitialWorkspace.subscriptions),
+      invoices: loadFromStorage<Invoice[]>('invoices', hasLegacyCurrency ? initialInvoices : inrInitialWorkspace.invoices),
+      payments: loadFromStorage<Payment[]>('payments', hasLegacyCurrency ? initialPayments : inrInitialWorkspace.payments),
+    };
+
+    if (needsPricingMigration) {
+      const localized = localizeWorkspaceToInr(storedWorkspace);
+      Object.entries(localized).forEach(([key, value]) => saveToStorage(key, value));
+      const notifications = loadFromStorage<NotificationItem[]>('notifications', initialNotifications).map((notification) => ({
+        ...notification,
+        message: notification.message.replace('($218.90)', '(₹768.90)'),
+      }));
+      const auditLog = loadFromStorage<AuditLogItem[]>('auditLog', initialAuditLog).map((entry) => ({
+        ...entry,
+        details: entry.details.replace('($163.90)', '(₹1,098.90)'),
+      }));
+      saveToStorage('notifications', notifications);
+      saveToStorage('auditLog', auditLog);
+      localStorage.setItem(INR_PRICING_VERSION_KEY, INR_PRICING_VERSION);
+      return localized;
+    }
+    if (!storedSettings) localStorage.setItem(INR_PRICING_VERSION_KEY, INR_PRICING_VERSION);
+    return storedWorkspace;
+  });
   const [currentUser, setCurrentUserState] = useState<AuthUser>(() =>
     loadFromStorage<AuthUser>('currentUser', initialUsers[0]!),
   );
   const [allUsers] = useState<AuthUser[]>(initialUsers);
-  const [settings, setSettingsState] = useState<WorkspaceSettings>(() =>
-    loadFromStorage<WorkspaceSettings>('settings', initialSettings),
-  );
-  const [customers, setCustomersState] = useState<Customer[]>(() =>
-    loadFromStorage<Customer[]>('customers', initialCustomers),
-  );
-  const [products, setProductsState] = useState<Product[]>(() =>
-    loadFromStorage<Product[]>('products', initialProducts),
-  );
-  const [plans, setPlansState] = useState<SubscriptionPlan[]>(() =>
-    loadFromStorage<SubscriptionPlan[]>('plans', initialPlans),
-  );
-  const [discounts, setDiscountsState] = useState<Discount[]>(() =>
-    loadFromStorage<Discount[]>('discounts', initialDiscounts),
-  );
-  const [quotations, setQuotationsState] = useState<Quotation[]>(() =>
-    loadFromStorage<Quotation[]>('quotations', initialQuotations),
-  );
-  const [subscriptions, setSubscriptionsState] = useState<Subscription[]>(() =>
-    loadFromStorage<Subscription[]>('subscriptions', initialSubscriptions),
-  );
-  const [invoices, setInvoicesState] = useState<Invoice[]>(() =>
-    loadFromStorage<Invoice[]>('invoices', initialInvoices),
-  );
-  const [payments, setPaymentsState] = useState<Payment[]>(() =>
-    loadFromStorage<Payment[]>('payments', initialPayments),
-  );
+  const [settings, setSettingsState] = useState<WorkspaceSettings>(initialWorkspace.settings);
+  const [customers, setCustomersState] = useState<Customer[]>(initialWorkspace.customers);
+  const [products, setProductsState] = useState<Product[]>(initialWorkspace.products);
+  const [plans, setPlansState] = useState<SubscriptionPlan[]>(initialWorkspace.plans);
+  const [discounts, setDiscountsState] = useState<Discount[]>(initialWorkspace.discounts);
+  const [quotations, setQuotationsState] = useState<Quotation[]>(initialWorkspace.quotations);
+  const [subscriptions, setSubscriptionsState] = useState<Subscription[]>(initialWorkspace.subscriptions);
+  const [invoices, setInvoicesState] = useState<Invoice[]>(initialWorkspace.invoices);
+  const [payments, setPaymentsState] = useState<Payment[]>(initialWorkspace.payments);
   const [billingRuns, setBillingRunsState] = useState<BillingRun[]>(() =>
     loadFromStorage<BillingRun[]>('billingRuns', []),
   );
@@ -1434,7 +1474,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       }
       if (disc.usage_limit && disc.usage_count >= disc.usage_limit) throw new Error('This discount has reached its usage limit.');
       if (disc.min_subtotal && compareDecimals(subtotal, disc.min_subtotal) < 0) {
-        throw new Error(`This discount requires a minimum subtotal of ${settings.currency} ${disc.min_subtotal}.`);
+        throw new Error(`This discount requires a minimum subtotal of ${formatCurrency(disc.min_subtotal, settings.currency_symbol)}.`);
       }
       const totalQuantity = quoteItems.reduce((sum, item) => sum + item.quantity, 0);
       if (disc.minimum_quantity && totalQuantity < disc.minimum_quantity) {
@@ -1776,6 +1816,159 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     return newSub;
   };
 
+  const purchasePlan = (data: {
+    customer_id: string;
+    plan_id: string;
+    method: Payment['method'];
+    reference: string;
+  }): { subscription: Subscription | null; invoice: Invoice | null; payment: Payment | null; error?: string } => {
+    const customer = customers.find((item) => item.id === data.customer_id);
+    const plan = plans.find((item) => item.id === data.plan_id);
+    const today = new Date().toISOString().slice(0, 10);
+    if (!customer || !plan) return { subscription: null, invoice: null, payment: null, error: 'Customer or plan could not be found.' };
+    if (plan.status !== 'active' || (plan.start_date && today < plan.start_date) || (plan.end_date && today > plan.end_date)) {
+      return { subscription: null, invoice: null, payment: null, error: 'This plan is no longer available.' };
+    }
+    const product = products.find((item) => item.id === plan.product_id);
+    if (!product) return { subscription: null, invoice: null, payment: null, error: 'The plan product could not be found.' };
+
+    const timestamp = Date.now();
+    const now = new Date().toISOString();
+    const quantity = Math.max(1, plan.minimum_quantity || 1);
+    const recurringAmount = multiplyDecimals(plan.price, quantity);
+    const setupFee = plan.setup_fee || '0.00';
+    const invoiceSubtotal = addDecimals(recurringAmount, setupFee);
+    const invoiceTax = calculatePercentage(invoiceSubtotal, settings.default_tax_rate);
+    const invoiceTotal = addDecimals(invoiceSubtotal, invoiceTax);
+    const recurringTax = calculatePercentage(recurringAmount, settings.default_tax_rate);
+    const totalRecurring = addDecimals(recurringAmount, recurringTax);
+    const nextBillingDate = addBillingInterval(today, plan.frequency);
+    const nextSubNum = (subscriptions.length + 1).toString().padStart(3, '0');
+    const subscriptionNumber = `${settings.subscription_prefix}2026-${nextSubNum}`;
+    const nextInvoiceNum = (invoices.length + 1).toString().padStart(3, '0');
+    const invoiceNumber = `${settings.invoice_prefix}2026-${nextInvoiceNum}`;
+    const nextPaymentNum = (payments.length + 1).toString().padStart(3, '0');
+    const paymentNumber = `${settings.payment_prefix}2026-${nextPaymentNum}`;
+    const invoiceId = `inv-${timestamp}`;
+    const subscriptionId = `sub-${timestamp}`;
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 30);
+
+    const subscriptionItems: SubscriptionItem[] = [{
+      id: `sitem-${timestamp}`,
+      product_id: plan.product_id,
+      product_name: `${plan.product_name} - ${plan.name}`,
+      quantity,
+      unit_price: plan.price,
+      amount: recurringAmount,
+    }];
+    const invoiceItems: InvoiceItem[] = [{
+      id: `iitem-${timestamp}-1`,
+      description: `${plan.name} (${plan.frequency} subscription)` ,
+      quantity,
+      unit_price: plan.price,
+      amount: recurringAmount,
+    }];
+    if (compareDecimals(setupFee, '0.00') > 0) {
+      invoiceItems.push({
+        id: `iitem-${timestamp}-2`,
+        description: `${plan.name} one-time setup fee`,
+        quantity: 1,
+        unit_price: setupFee,
+        amount: setupFee,
+      });
+    }
+
+    const subscription: Subscription = {
+      id: subscriptionId,
+      number: subscriptionNumber,
+      customer_id: customer.id,
+      customer_name: customer.company_name,
+      customer_email: customer.email,
+      plan_id: plan.id,
+      plan_name: plan.name,
+      frequency: plan.frequency,
+      status: 'active',
+      start_date: today,
+      next_billing_date: nextBillingDate,
+      last_billing_date: today,
+      items: subscriptionItems,
+      recurring_amount: recurringAmount,
+      tax_rate: settings.default_tax_rate,
+      tax_amount: recurringTax,
+      total_recurring: totalRecurring,
+      auto_renew: plan.auto_renew,
+      can_pause: plan.allow_pause,
+      can_close_early: plan.can_close_early ?? true,
+      can_renew: plan.can_renew ?? true,
+      events: [{
+        id: `ev-${timestamp}`,
+        event_type: 'activated',
+        actor: `${currentUser.first_name} ${currentUser.last_name}`,
+        timestamp: now,
+        notes: `Plan purchased through simulated ${data.method.replace('_', ' ')} checkout.`,
+      }],
+      created_at: now,
+      updated_at: now,
+    };
+    const invoice: Invoice = {
+      id: invoiceId,
+      number: invoiceNumber,
+      customer_id: customer.id,
+      customer_name: customer.company_name,
+      customer_email: customer.email,
+      subscription_id: subscriptionId,
+      subscription_number: subscriptionNumber,
+      billing_period_start: today,
+      billing_period_end: nextBillingDate,
+      status: 'paid',
+      is_overdue: false,
+      issue_date: today,
+      due_date: dueDate.toISOString().slice(0, 10),
+      items: invoiceItems,
+      subtotal: invoiceSubtotal,
+      discount_amount: '0.00',
+      tax_rate: settings.default_tax_rate,
+      tax_amount: invoiceTax,
+      total: invoiceTotal,
+      paid_amount: invoiceTotal,
+      balance_due: '0.00',
+      notes: `Paid at checkout using simulated ${data.method.replace('_', ' ')} payment.`,
+      created_at: now,
+      updated_at: now,
+    };
+    const allocation: PaymentAllocation = {
+      id: `alloc-${timestamp}`,
+      invoice_id: invoiceId,
+      invoice_number: invoiceNumber,
+      amount: invoiceTotal,
+      allocated_at: now,
+    };
+    const payment: Payment = {
+      id: `pay-${timestamp}`,
+      number: paymentNumber,
+      customer_id: customer.id,
+      customer_name: customer.company_name,
+      amount: invoiceTotal,
+      unallocated_amount: '0.00',
+      method: data.method,
+      reference: data.reference,
+      received_date: today,
+      status: 'completed',
+      notes: 'Simulated payment completed during customer plan checkout. No real funds were collected.',
+      allocations: [allocation],
+      created_at: now,
+      updated_at: now,
+    };
+
+    setSubscriptionsState((prev) => [subscription, ...prev]);
+    setInvoicesState((prev) => [invoice, ...prev]);
+    setPaymentsState((prev) => [payment, ...prev]);
+    addAuditLog('PURCHASE_PLAN', 'SUBSCRIPTION', subscriptionId, `Purchased ${plan.name}; invoice ${invoiceNumber} paid by simulated ${data.method.replace('_', ' ')} payment.`);
+    addNotification('Payment successful', `${plan.name} is active. Invoice ${invoiceNumber} is paid.`, 'success', '/portal');
+    return { subscription, invoice, payment };
+  };
+
   const activateSubscription = (id: string) => {
     setSubscriptionsState((prev) =>
       prev.map((s) => {
@@ -2030,7 +2223,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
       newInvoices.push(newInv);
       created++;
-      log.push(`[SUCCESS] Generated Invoice ${invoiceNumber} ($${invoiceTotal}) for ${sub.customer_name} (${sub.number}).`);
+      log.push(`[SUCCESS] Generated Invoice ${invoiceNumber} (${formatCurrency(invoiceTotal, settings.currency_symbol)}) for ${sub.customer_name} (${sub.number}).`);
 
       const newNextBilling = periodEnd;
       const billedEvent: SubscriptionEvent = {
@@ -2129,7 +2322,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         if (compareDecimals(item.amount, invoice.balance_due) > 0) {
           return {
             payment: {} as Payment,
-            error: `Allocation amount ($${item.amount}) exceeds outstanding balance ($${invoice.balance_due}) on invoice ${invoice.number}`,
+            error: `Allocation amount (${formatCurrency(item.amount, settings.currency_symbol)}) exceeds outstanding balance (${formatCurrency(invoice.balance_due, settings.currency_symbol)}) on invoice ${invoice.number}`,
           };
         }
 
@@ -2146,7 +2339,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       if (compareDecimals(totalAllocated, data.amount) > 0) {
         return {
           payment: {} as Payment,
-          error: `Total allocation ($${totalAllocated}) cannot exceed payment amount ($${data.amount})`,
+          error: `Total allocation (${formatCurrency(totalAllocated, settings.currency_symbol)}) cannot exceed payment amount (${formatCurrency(data.amount, settings.currency_symbol)})`,
         };
       }
     }
@@ -2200,12 +2393,12 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       'RECORD_PAYMENT',
       'PAYMENT',
       newPayment.id,
-      `Recorded payment ${paymentNumber} ($${data.amount}) for ${customer.company_name}. Allocated $${totalAllocated}`,
+      `Recorded payment ${paymentNumber} (${formatCurrency(data.amount, settings.currency_symbol)}) for ${customer.company_name}. Allocated ${formatCurrency(totalAllocated, settings.currency_symbol)}`,
     );
 
     addNotification(
       'Payment Recorded',
-      `Payment ${paymentNumber} for $${data.amount} recorded successfully.`,
+      `Payment ${paymentNumber} for ${formatCurrency(data.amount, settings.currency_symbol)} recorded successfully.`,
       'success',
       '/payments',
     );
@@ -2225,15 +2418,15 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
   const resetToDefaults = () => {
     setCurrentUserState(initialUsers[0]!);
-    setSettingsState(initialSettings);
-    setCustomersState(initialCustomers);
-    setProductsState(initialProducts);
-    setPlansState(initialPlans);
-    setDiscountsState(initialDiscounts);
-    setQuotationsState(initialQuotations);
-    setSubscriptionsState(initialSubscriptions);
-    setInvoicesState(initialInvoices);
-    setPaymentsState(initialPayments);
+    setSettingsState(inrInitialWorkspace.settings);
+    setCustomersState(inrInitialWorkspace.customers);
+    setProductsState(inrInitialWorkspace.products);
+    setPlansState(inrInitialWorkspace.plans);
+    setDiscountsState(inrInitialWorkspace.discounts);
+    setQuotationsState(inrInitialWorkspace.quotations);
+    setSubscriptionsState(inrInitialWorkspace.subscriptions);
+    setInvoicesState(inrInitialWorkspace.invoices);
+    setPaymentsState(inrInitialWorkspace.payments);
     setBillingRunsState([]);
     setNotificationsState(initialNotifications);
     setAuditLogState(initialAuditLog);
@@ -2282,6 +2475,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         convertQuotationToSubscription,
         subscriptions,
         createSubscription,
+        purchasePlan,
         activateSubscription,
         pauseSubscription,
         resumeSubscription,

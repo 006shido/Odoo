@@ -3,6 +3,7 @@ import {
   CreditCard,
   CheckCircle2,
   Building,
+  Smartphone,
   ShieldCheck,
 } from 'lucide-react';
 import { useSubscription } from '@/lib/store/subscriptionStore';
@@ -11,7 +12,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { cn } from '@/lib/utils';
-import type { Invoice } from '@/types';
+import type { Invoice, PaymentMethod } from '@/types';
+
+function paymentMethodLabel(method: PaymentMethod) {
+  if (method === 'upi') return 'UPI';
+  if (method === 'card') return 'Credit or debit card';
+  if (method === 'bank_transfer') return 'Net banking';
+  return method.replace('_', ' ');
+}
 
 export function CustomerPortalPage() {
   const {
@@ -31,8 +39,10 @@ export function CustomerPortalPage() {
   const [activeTab, setActiveTab] = useState<'subs' | 'invoices' | 'quotes' | 'payments' | 'profile'>('subs');
   const [isPayModalOpen, setIsPayModalOpen] = useState(false);
   const [payingInvoice, setPayingInvoice] = useState<Invoice | null>(null);
-  const [payMethod, setPayMethod] = useState<'card' | 'bank_transfer'>('card');
+  const [payMethod, setPayMethod] = useState<PaymentMethod>('upi');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentReference, setPaymentReference] = useState('');
+  const [paymentError, setPaymentError] = useState('');
   const today = new Date().toISOString().slice(0, 10);
 
   // Active customer identity
@@ -70,29 +80,51 @@ export function CustomerPortalPage() {
 
   const handleSimulatePayment = (invoice: Invoice) => {
     setPayingInvoice(invoice);
+    setPayMethod('upi');
+    setPaymentReference('');
+    setPaymentError('');
     setIsPayModalOpen(true);
   };
 
   const handleConfirmPayment = () => {
-    if (!payingInvoice) return;
+    if (!payingInvoice || isProcessing) return;
     setIsProcessing(true);
+    setPaymentError('');
+    const reference = `BL-${payMethod.toUpperCase()}-${Date.now().toString().slice(-8)}`;
 
     setTimeout(() => {
-      recordPayment({
+      const result = recordPayment({
         customer_id: activeCustomer.id,
         amount: payingInvoice.balance_due,
         method: payMethod,
-        reference: `PORTAL-PAY-${Date.now().toString().slice(-6)}`,
+        reference,
         received_date: new Date().toISOString().split('T')[0]!,
-        notes: 'Online payment via Customer Self-Service Portal.',
+        notes: `Simulated online payment via ${paymentMethodLabel(payMethod)} in Customer Portal.`,
         allocations: [{ invoice_id: payingInvoice.id, amount: payingInvoice.balance_due }],
       });
 
       setIsProcessing(false);
-      setIsPayModalOpen(false);
-      setPayingInvoice(null);
+      if (result.error) {
+        setPaymentError(result.error);
+        return;
+      }
+      setPaymentReference(reference);
     }, 600);
   };
+
+  const closePaymentModal = () => {
+    if (isProcessing) return;
+    setIsPayModalOpen(false);
+    setPayingInvoice(null);
+    setPaymentReference('');
+    setPaymentError('');
+  };
+
+  const paymentOptions = [
+    { method: 'upi' as const, label: 'UPI', hint: 'GPay, PhonePe, BHIM', Icon: Smartphone },
+    { method: 'card' as const, label: 'Cards', hint: 'Credit or debit', Icon: CreditCard },
+    { method: 'bank_transfer' as const, label: 'Net banking', hint: 'Choose your bank', Icon: Building },
+  ];
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
@@ -373,7 +405,7 @@ export function CustomerPortalPage() {
                       <td className="px-6 py-4 font-semibold text-text-primary">{p.number}</td>
                       <td className="px-6 py-4 text-xs text-text-secondary">{p.received_date}</td>
                       <td className="px-6 py-4 text-xs capitalize text-text-primary">
-                        {p.method.replace('_', ' ')}
+                        {paymentMethodLabel(p.method)}
                       </td>
                       <td className="px-6 py-4 font-mono text-xs text-text-tertiary">{p.reference}</td>
                       <td className="px-6 py-4 font-bold text-right text-success">
@@ -423,65 +455,79 @@ export function CustomerPortalPage() {
       {/* Modal: Simulate Online Payment */}
       {isPayModalOpen && payingInvoice && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsPayModalOpen(false)} />
-          <div className="relative w-full max-w-md rounded-2xl bg-surface p-6 shadow-2xl border border-border z-10 animate-in zoom-in-95 duration-150 space-y-4">
-            <h3 className="text-lg font-bold text-text-primary">Pay Invoice {payingInvoice.number}</h3>
-            <p className="text-xs text-text-secondary">
-              Review amount and confirm instant payment simulation.
-            </p>
-
-            <div className="p-4 rounded-xl bg-surface-secondary border border-border/70 text-center space-y-1">
-              <span className="text-xs text-text-secondary">Outstanding Balance Due</span>
-              <div className="text-3xl font-extrabold text-text-primary">
-                {formatCurrency(payingInvoice.balance_due, settings.currency_symbol)}
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={closePaymentModal} />
+          <div className="relative w-full max-w-lg rounded-2xl bg-surface p-6 shadow-2xl border border-border z-10 animate-in zoom-in-95 duration-150 space-y-5">
+            {paymentReference ? (
+              <div className="py-3 text-center">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                  <CheckCircle2 className="h-8 w-8" />
+                </div>
+                <h3 className="text-xl font-bold text-text-primary">Payment successful</h3>
+                <p className="mt-1 text-sm text-text-secondary">Invoice {payingInvoice.number} is now paid.</p>
+                <p className="mt-5 text-3xl font-extrabold text-text-primary">
+                  {formatCurrency(payingInvoice.balance_due, settings.currency_symbol)}
+                </p>
+                <div className="mx-auto mt-5 max-w-sm rounded-xl bg-surface-secondary p-3 text-left text-xs">
+                  <div className="flex justify-between gap-3 py-1.5"><span className="text-text-secondary">Method</span><span className="font-semibold text-text-primary">{paymentMethodLabel(payMethod)}</span></div>
+                  <div className="flex justify-between gap-3 py-1.5"><span className="text-text-secondary">Reference</span><span className="font-mono text-text-primary">{paymentReference}</span></div>
+                  <div className="flex justify-between gap-3 py-1.5"><span className="text-text-secondary">Status</span><span className="font-semibold text-emerald-700">Simulated · Successful</span></div>
+                </div>
+                <p className="mt-3 text-[11px] text-text-tertiary">This is a demo transaction. No real money was charged.</p>
+                <Button onClick={closePaymentModal} className="mt-5 w-full rounded-xl">Done</Button>
               </div>
-            </div>
+            ) : (
+              <>
+                <div>
+                  <h3 className="text-lg font-bold text-text-primary">Pay Invoice {payingInvoice.number}</h3>
+                  <p className="mt-1 text-xs text-text-secondary">Choose a payment method to simulate your payment securely.</p>
+                </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-text-primary">Select Payment Method</label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPayMethod('card')}
-                  className={cn(
-                    'p-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all',
-                    payMethod === 'card'
-                      ? 'border-accent bg-accent/10 text-accent ring-1 ring-accent'
-                      : 'border-border bg-surface text-text-secondary',
-                  )}
-                >
-                  <CreditCard className="h-4 w-4" />
-                  Credit Card
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPayMethod('bank_transfer')}
-                  className={cn(
-                    'p-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all',
-                    payMethod === 'bank_transfer'
-                      ? 'border-accent bg-accent/10 text-accent ring-1 ring-accent'
-                      : 'border-border bg-surface text-text-secondary',
-                  )}
-                >
-                  <Building className="h-4 w-4" />
-                  ACH / Wire
-                </button>
-              </div>
-            </div>
+                <div className="rounded-xl border border-border/70 bg-surface-secondary p-4 text-center">
+                  <span className="text-xs text-text-secondary">Amount due</span>
+                  <div className="mt-1 text-3xl font-extrabold text-text-primary">
+                    {formatCurrency(payingInvoice.balance_due, settings.currency_symbol)}
+                  </div>
+                </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-border/80">
-              <Button variant="outline" size="sm" onClick={() => setIsPayModalOpen(false)} className="rounded-xl">
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleConfirmPayment}
-                disabled={isProcessing}
-                className="rounded-xl shadow-xs"
-              >
-                {isProcessing ? 'Authorizing...' : `Confirm & Pay ${formatCurrency(payingInvoice.balance_due, settings.currency_symbol)}`}
-              </Button>
-            </div>
+                <fieldset className="space-y-2" disabled={isProcessing}>
+                  <legend className="mb-2 text-xs font-semibold text-text-primary">Payment method</legend>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    {paymentOptions.map(({ method, label, hint, Icon }) => (
+                      <button
+                        key={method}
+                        type="button"
+                        aria-pressed={payMethod === method}
+                        onClick={() => setPayMethod(method)}
+                        className={cn(
+                          'flex items-center gap-3 rounded-xl border p-3 text-left transition-all sm:flex-col sm:items-start sm:gap-2',
+                          payMethod === method
+                            ? 'border-accent bg-accent/10 text-accent ring-1 ring-accent'
+                            : 'border-border bg-surface text-text-secondary hover:border-border-strong',
+                        )}
+                      >
+                        <Icon className="h-5 w-5 shrink-0" />
+                        <span><span className="block text-xs font-semibold">{label}</span><span className="mt-0.5 block text-[10px] opacity-75">{hint}</span></span>
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+
+                <div className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2.5 text-[11px] leading-4 text-amber-900">
+                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>Hackathon demo mode: this creates a simulated payment record and updates the invoice. No real payment details or money are used.</span>
+                </div>
+
+                {paymentError && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{paymentError}</p>}
+                {isProcessing && <p role="status" className="text-center text-xs font-medium text-accent">Authorizing simulated {paymentMethodLabel(payMethod)} payment…</p>}
+
+                <div className="flex items-center justify-end gap-2 border-t border-border/80 pt-3">
+                  <Button variant="outline" size="sm" onClick={closePaymentModal} disabled={isProcessing} className="rounded-xl">Cancel</Button>
+                  <Button size="sm" onClick={handleConfirmPayment} disabled={isProcessing} className="rounded-xl shadow-xs">
+                    {isProcessing ? 'Processing…' : `Pay ${formatCurrency(payingInvoice.balance_due, settings.currency_symbol)}`}
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

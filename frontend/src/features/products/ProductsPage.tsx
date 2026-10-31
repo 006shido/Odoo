@@ -28,12 +28,12 @@ export function ProductsPage() {
     category: 'Software',
     product_type: 'software' as 'software' | 'addon' | 'service' | 'physical',
     description: '',
-    default_price: '99.00',
+    default_price: '499.00',
     cost_price: '0.00',
     tax_rate: '10.00',
     notes: '',
     variants: [
-      { id: 'v1', sku: '', name: 'Standard Edition', price: '99.00', price_modifier: '0.00', status: 'active' as const },
+      { id: 'v1', sku: '', name: 'Standard Edition', price: '499.00', price_modifier: '0.00', status: 'active' as const },
     ],
   });
 
@@ -60,13 +60,13 @@ export function ProductsPage() {
       category: 'Software',
       product_type: 'software',
       description: '',
-      default_price: '99.00',
+      default_price: '499.00',
       cost_price: '0.00',
       tax_rate: '10.00',
       notes: '',
       variants: [
-        { id: `var-${Date.now()}-1`, sku: `SKU-STD-${nextNum}`, name: 'Standard Edition', price: '99.00', price_modifier: '0.00', status: 'active' },
-        { id: `var-${Date.now()}-2`, sku: `SKU-ODOO-${nextNum}`, name: 'Odoo Brand', price: '659.00', price_modifier: '560.00', status: 'active' },
+        { id: `var-${Date.now()}-1`, sku: `SKU-STD-${nextNum}`, name: 'Standard Edition', price: '499.00', price_modifier: '0.00', status: 'active' },
+        { id: `var-${Date.now()}-2`, sku: `SKU-ODOO-${nextNum}`, name: 'Odoo Brand', price: '999.00', price_modifier: '500.00', status: 'active' },
       ],
     });
     setIsCreateOpen(true);
@@ -81,7 +81,7 @@ export function ProductsPage() {
           id: `var-${Date.now()}`,
           sku: `${prev.code}-VAR-${prev.variants.length + 1}`,
           name: `Tier ${prev.variants.length + 1}`,
-          price: '99.00',
+          price: '499.00',
           price_modifier: '0.00',
           status: 'active',
         },
