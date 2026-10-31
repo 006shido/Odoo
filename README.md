@@ -1,4 +1,5 @@
 # Brightloop – Subscription Management System
+
 > Odoo Hackathon 2026 | Team: Talent Not Found
 
 Brightloop is a web-based subscription management platform built to manage the complete subscription lifecycle: product catalog and variants, flexible subscription plans, quotations, automated recurring billing, discount rules, payment allocation, and an operations dashboard.
