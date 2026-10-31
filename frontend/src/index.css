@@ -2,61 +2,80 @@
 
 @layer base {
   :root {
-    /* Clean, Human-Crafted SaaS Palette (Light Mode) */
-    --background: #F8FAFC;
+    /* Apple Light Mode Palette (System Light) */
+    --background: #F5F5F7;
     --surface: #FFFFFF;
-    --surface-secondary: #F1F5F9;
-    --surface-tertiary: #E2E8F0;
-    --border: #E2E8F0;
-    --border-strong: #CBD5E1;
-    --text-primary: #0F172A;
-    --text-secondary: #475569;
-    --text-tertiary: #94A3B8;
+    --surface-secondary: #F2F2F7;
+    --surface-tertiary: #E5E5EA;
+    --border: rgba(0, 0, 0, 0.08);
+    --border-strong: rgba(0, 0, 0, 0.15);
+    --text-primary: #1D1D1F;
+    --text-secondary: #86868B;
+    --text-tertiary: #A1A1A6;
     --text-inverse: #FFFFFF;
 
-    /* Clean Blue Accent (Stripe / Tailwind style) */
-    --accent: #2563EB;
-    --accent-hover: #1D4ED8;
-    --accent-light: #EFF6FF;
+    /* Apple System Blue Accent */
+    --accent: #0071E3;
+    --accent-hover: #0077ED;
+    --accent-light: rgba(0, 113, 227, 0.10);
     --accent-text: #FFFFFF;
 
     /* Semantic Status Colors */
-    --success: #16A34A;
-    --success-light: #F0FDF4;
-    --warning: #D97706;
-    --warning-light: #FFFBEB;
-    --error: #DC2626;
-    --error-light: #FEF2F2;
-    --info: #2563EB;
-    --info-light: #EFF6FF;
+    --success: #34C759;
+    --success-light: rgba(52, 199, 89, 0.12);
+    --warning: #FF9500;
+    --warning-light: rgba(255, 149, 0, 0.12);
+    --error: #FF3B30;
+    --error-light: rgba(255, 59, 48, 0.12);
+    --info: #0071E3;
+    --info-light: rgba(0, 113, 227, 0.12);
+
+    /* Apple Glass Tokens (Light Mode - GlassKit standard) */
+    --glass-bg: rgba(255, 255, 255, 0.72);
+    --glass-surface: rgba(255, 255, 255, 0.78);
+    --glass-surface-secondary: rgba(242, 242, 247, 0.75);
+    --glass-border: rgba(255, 255, 255, 0.65);
+    --glass-border-subtle: rgba(0, 0, 0, 0.06);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05), inset 0 1px 1px 0 rgba(255, 255, 255, 0.9);
+    --glass-blur: 24px;
   }
 
   .dark {
-    /* Clean Dark Mode (Grounded Slate) */
-    --background: #0B0F19;
-    --surface: #111827;
-    --surface-secondary: #1F2937;
-    --surface-tertiary: #374151;
-    --border: #283548;
-    --border-strong: #3E4C5E;
-    --text-primary: #F8FAFC;
-    --text-secondary: #94A3B8;
-    --text-tertiary: #64748B;
-    --text-inverse: #111827;
+    /* Apple Dark Mode Palette (macOS / iOS 18 System Dark) */
+    --background: #000000;
+    --surface: #1C1C1E;
+    --surface-secondary: #2C2C2E;
+    --surface-tertiary: #3A3A3C;
+    --border: rgba(255, 255, 255, 0.12);
+    --border-strong: rgba(255, 255, 255, 0.18);
+    --text-primary: #F5F5F7;
+    --text-secondary: #8E8E93;
+    --text-tertiary: #636366;
+    --text-inverse: #1C1C1E;
 
-    --accent: #3B82F6;
-    --accent-hover: #2563EB;
-    --accent-light: rgba(59, 130, 246, 0.15);
+    /* Apple Vibrant Blue Accent */
+    --accent: #0A84FF;
+    --accent-hover: #409CFF;
+    --accent-light: rgba(10, 132, 255, 0.16);
     --accent-text: #FFFFFF;
 
-    --success: #22C55E;
-    --success-light: rgba(34, 197, 94, 0.15);
-    --warning: #F59E0B;
-    --warning-light: rgba(245, 158, 11, 0.15);
-    --error: #EF4444;
-    --error-light: rgba(239, 68, 68, 0.15);
-    --info: #3B82F6;
-    --info-light: rgba(59, 130, 246, 0.15);
+    --success: #30D158;
+    --success-light: rgba(48, 209, 88, 0.15);
+    --warning: #FF9F0A;
+    --warning-light: rgba(255, 159, 10, 0.15);
+    --error: #FF453A;
+    --error-light: rgba(255, 69, 58, 0.15);
+    --info: #0A84FF;
+    --info-light: rgba(10, 132, 255, 0.15);
+
+    /* Apple Glass Tokens (Dark Mode - GlassKit standard) */
+    --glass-bg: rgba(28, 28, 30, 0.72);
+    --glass-surface: rgba(32, 32, 35, 0.76);
+    --glass-surface-secondary: rgba(44, 44, 46, 0.72);
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --glass-border-subtle: rgba(255, 255, 255, 0.07);
+    --glass-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.50), inset 0 1px 1px 0 rgba(255, 255, 255, 0.14);
+    --glass-blur: 28px;
   }
 }
 
@@ -86,8 +105,8 @@
   --color-info: var(--info);
   --color-info-light: var(--info-light);
 
-  /* Clean, Legible Font Stack */
-  --font-family-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  /* Apple System Typography Stack */
+  --font-family-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
   --font-size-base: 1rem;
@@ -112,25 +131,28 @@
   --spacing-20: 5rem;
   --spacing-24: 6rem;
 
-  /* Standard, Practical Radii */
+  /* Standard Apple Radii */
+  --radius-xs: 0.25rem;
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
-  --radius-lg: 0.625rem;
-  --radius-xl: 0.75rem;
-  --radius-2xl: 1rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.5rem;
   --radius-full: 9999px;
 
-  /* Subtle, Grounded Shadows */
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
-  --shadow-apple: 0 2px 8px 0 rgba(0, 0, 0, 0.06);
-  --shadow-apple-floating: 0 8px 24px rgba(0, 0, 0, 0.12);
+  /* Apple Soft Depth Shadows */
+  --shadow-2xs: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  --shadow-xs: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 2px 8px -1px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 16px -2px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 8px 28px -4px rgba(0, 0, 0, 0.08);
+  --shadow-apple: 0 4px 20px -2px rgba(0, 0, 0, 0.06);
+  --shadow-apple-floating: 0 16px 48px -4px rgba(0, 0, 0, 0.16);
 
   --transition-fast: 100ms;
-  --transition-base: 150ms;
-  --transition-slow: 250ms;
+  --transition-base: 180ms;
+  --transition-slow: 300ms;
 }
 
 /* Base Body Styles */
@@ -147,42 +169,63 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Simple Clean Card */
+/* Apple Gaussian Liquid Glass (Open-Source GitHub GlassKit standard) */
+.apple-glass,
+.liquid-glass {
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(190%) brightness(102%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(190%) brightness(102%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* Apple Frosted Card System */
 .apple-card {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 0.75rem;
-  box-shadow: var(--shadow-xs);
-  transition: border-color 0.15s ease;
+  background-color: var(--glass-surface);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow-sm), inset 0 1px 0 0 rgba(255, 255, 255, 0.7);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, background-color 0.2s ease;
 }
 
 .apple-card:hover {
-  border-color: var(--color-border-strong);
+  background-color: var(--glass-surface);
+  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.03), inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.85);
+  transform: translateY(-2px);
 }
 
-/* Simple Solid Header (No Fake Glassmorphism Blur) */
-.liquid-glass,
-.apple-glass {
-  background-color: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
+.dark .apple-card {
+  box-shadow: var(--shadow-md), inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
 }
 
-/* Simple Segmented Controls */
+.dark .apple-card:hover {
+  background-color: rgba(38, 38, 42, 0.82);
+  box-shadow: 0 16px 40px -4px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+/* Apple Segmented Controls with Gaussian Blur */
 .apple-segmented-container {
   display: inline-flex;
   align-items: center;
-  padding: 2px;
-  border-radius: 0.5rem;
-  background-color: var(--color-surface-secondary);
-  border: 1px solid var(--color-border);
+  padding: 3px;
+  border-radius: 9999px;
+  background-color: var(--glass-surface-secondary);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--glass-border-subtle);
 }
 
 .apple-segmented-item {
-  padding: 4px 10px;
-  border-radius: 0.375rem;
+  padding: 4px 12px;
+  border-radius: 9999px;
   font-size: 0.8125rem;
   font-weight: 500;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   color: var(--color-text-secondary);
   cursor: pointer;
   user-select: none;
@@ -191,10 +234,23 @@ body {
 .apple-segmented-item.active {
   background-color: var(--color-surface);
   color: var(--color-text-primary);
-  box-shadow: var(--shadow-xs);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
-/* Clean, Standard Scrollbars */
+.dark .apple-segmented-item.active {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* Dedicated Gaussian Blur Panels */
+.gaussian-panel {
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* Clean, Translucent Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -210,9 +266,22 @@ body {
   background: var(--color-text-tertiary);
 }
 
-/* Clean Standard Focus Ring */
+/* Apple Focus Ring */
 .focus-ring {
-  @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-surface;
+  @apply outline-none ring-2 ring-accent/40 ring-offset-2 ring-offset-surface;
+}
+
+/* Accessibility: Reduced Transparency Support */
+@media (prefers-reduced-transparency: reduce) {
+  .apple-glass,
+  .liquid-glass,
+  .apple-card,
+  .gaussian-panel,
+  .apple-segmented-container {
+    background-color: var(--color-surface) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
 }
 
 /* Reduced motion accessibility */

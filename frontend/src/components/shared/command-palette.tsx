@@ -197,12 +197,12 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/40 transition-opacity animate-in fade-in duration-150"
+        className="fixed inset-0 bg-black/40 backdrop-blur-md transition-opacity animate-in fade-in duration-150"
         onClick={onClose}
       />
 
       {/* Modal Dialog */}
-      <div className="relative w-full max-w-xl rounded-xl bg-surface border border-border shadow-xl overflow-hidden z-10 animate-in zoom-in-95 duration-150">
+      <div className="relative w-full max-w-xl rounded-3xl bg-surface/85 dark:bg-surface/80 backdrop-blur-3xl border border-white/60 dark:border-white/15 shadow-apple-floating overflow-hidden z-10 animate-in zoom-in-95 duration-200 ease-out">
         {/* Search Input Bar */}
         <div className="flex items-center px-4 py-3 border-b border-border gap-3">
           <Search className="h-4 w-4 text-text-tertiary shrink-0" />
@@ -222,7 +222,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
               <X className="h-4 w-4" />
             </button>
           ) : (
-            <span className="text-[10px] font-medium text-text-tertiary bg-surface-secondary px-1.5 py-0.5 rounded border border-border">
+            <span className="text-[10px] font-medium text-text-tertiary bg-surface-secondary/80 backdrop-blur-md px-2 py-0.5 rounded-md border border-border/60 shadow-2xs font-mono">
               ESC
             </span>
           )}

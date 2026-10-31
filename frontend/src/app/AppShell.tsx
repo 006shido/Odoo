@@ -127,14 +127,20 @@ export function AppShell() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-text-primary flex">
+    <div className="min-h-screen bg-background text-text-primary flex antialiased relative overflow-hidden">
+      {/* Ambient Apple Gaussian Backlights (Light & Dark Vibrancy) */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
+        <div className="absolute -top-[15%] -right-[10%] w-[550px] h-[550px] rounded-full bg-accent/8 dark:bg-accent/15 blur-[140px] transform-gpu" />
+        <div className="absolute top-[30%] -left-[10%] w-[480px] h-[480px] rounded-full bg-emerald-500/6 dark:bg-emerald-500/10 blur-[130px] transform-gpu" />
+        <div className="absolute -bottom-[15%] right-[15%] w-[600px] h-[600px] rounded-full bg-indigo-500/6 dark:bg-indigo-600/12 blur-[150px] transform-gpu" />
+      </div>
       {/* Command Palette */}
       <CommandPalette isOpen={paletteOpen} onClose={() => setPaletteOpen(false)} />
 
       {/* Mobile Backdrop */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-md lg:hidden"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
@@ -142,7 +148,7 @@ export function AppShell() {
       {/* Clean, Grounded Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 w-60 bg-surface border-r border-border flex flex-col transition-transform duration-200 lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-40 w-60 bg-surface/80 dark:bg-surface/75 backdrop-blur-2xl border-r border-border/80 flex flex-col transition-transform duration-200 lg:translate-x-0 shadow-xs',
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
@@ -247,7 +253,7 @@ export function AppShell() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-h-screen lg:pl-60">
         {/* Simple Top Navigation Bar */}
-        <header className="sticky top-0 z-30 h-14 bg-surface border-b border-border flex items-center justify-between px-6">
+        <header className="sticky top-0 z-30 h-14 bg-surface/80 dark:bg-surface/75 backdrop-blur-2xl border-b border-border/80 flex items-center justify-between px-6 shadow-2xs">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileMenuOpen(true)}
@@ -265,7 +271,7 @@ export function AppShell() {
             {/* Search Button */}
             <button
               onClick={() => setPaletteOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-secondary hover:bg-surface-tertiary border border-border text-xs text-text-secondary transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface/60 hover:bg-surface/80 dark:bg-surface/40 backdrop-blur-md border border-border/80 text-xs text-text-secondary hover:text-text-primary transition-all shadow-2xs"
             >
               <Search className="h-3.5 w-3.5 text-text-tertiary" />
               <span className="hidden sm:inline">Search</span>
@@ -290,7 +296,7 @@ export function AppShell() {
               {notifOpen && (
                 <>
                   <div className="fixed inset-0 z-30" onClick={() => setNotifOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-80 rounded-xl bg-surface border border-border shadow-lg p-3 z-40">
+                  <div className="absolute right-0 mt-2 w-80 rounded-2xl bg-surface/85 dark:bg-surface/80 backdrop-blur-3xl border border-white/60 dark:border-white/12 shadow-apple-floating p-3 z-40 animate-in fade-in zoom-in-95 duration-150">
                     <div className="flex items-center justify-between pb-2 mb-2 border-b border-border">
                       <span className="text-xs font-semibold text-text-primary">
                         Notifications ({unreadNotifs})
