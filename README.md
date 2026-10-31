@@ -1,98 +1,119 @@
-# Brightloop Subscription Management
-> Odoo Hackathon 2026 | Team: Talent Not Found
+# Brightloop – Subscription Management System
 
-A web application for subscription operations: product catalog, recurring plans, quotations, automated billing, discounts, payments, and an operations dashboard.
+### Odoo Hackathon 2026 | Team: Talent Not Found
+
+## About the Project
+
+Brightloop is a subscription management platform designed to simplify and automate the way businesses manage recurring services, customers, subscriptions, billing, and payments.
+
+The goal is to build a centralized platform where businesses can manage the complete subscription lifecycle, from creating subscription plans and generating quotations to recurring invoice generation and payment tracking.
+
+Instead of handling these operations manually across different systems, Brightloop brings everything together in one organized workspace.
+
+## What We Are Going to Build
+
+We are planning to develop a web-based application with the following major modules:
+
+### 1. Dashboard
+- Overview of business activities.
+- Active and inactive subscriptions.
+- Monthly recurring revenue.
+- Pending invoices and payments.
+- Revenue and subscription analytics.
+
+### 2. Customer Management
+- Add and manage customers.
+- Maintain customer profiles and contact details.
+- View customer subscription history.
+- Track customer-related invoices and payments.
+
+### 3. Product Management
+- Create and manage products or services.
+- Configure product pricing and variants.
+- Maintain the available subscription offerings.
+
+### 4. Subscription Plan Management
+- Create flexible subscription plans.
+- Support daily, weekly, monthly, and yearly billing.
+- Configure subscription duration and pricing.
+- Manage renewals, pauses, and cancellations.
+
+### 5. Quotation Management
+- Generate quotations for customers.
+- Add products, services, and subscription plans.
+- Apply discounts and calculate taxes.
+- Track quotation acceptance and rejection.
+- Convert accepted quotations into subscriptions.
+
+### 6. Subscription Management
+- Create subscriptions for customers.
+- Activate, pause, resume, and cancel subscriptions.
+- Track subscription status and renewal dates.
+- Maintain complete subscription history.
+
+### 7. Automated Recurring Billing
+- Identify subscriptions approaching their billing dates.
+- Automatically generate recurring invoices.
+- Maintain billing schedules.
+- Prevent duplicate invoice generation.
+- Track upcoming and completed billing cycles.
+
+### 8. Invoice Management
+- Generate invoices automatically or manually.
+- Calculate applicable taxes and discounts.
+- Generate downloadable PDF invoices.
+- Track paid, unpaid, and overdue invoices.
+
+### 9. Payment Management
+- Record and track customer payments.
+- Support UPI, cash, card, and bank transfers.
+- Handle partial and full payments.
+- Allocate payments to invoices.
+- Calculate outstanding balances.
+
+### 10. Discount Management
+- Create percentage-based and fixed discounts.
+- Configure discount validity.
+- Apply discounts to eligible subscriptions and invoices.
+
+### 11. Reports and Analytics
+- Monitor recurring revenue.
+- Analyze subscription growth and cancellations.
+- Track collected revenue and outstanding payments.
+- Generate business and financial reports.
+
+### 12. Subscription Control Tower
+- Centralized monitoring of subscription operations.
+- Overview of renewals and upcoming billing.
+- Identify overdue invoices and inactive subscriptions.
+- Provide better visibility into the overall subscription lifecycle.
+
+## How the System Will Work
+
+The proposed workflow:
+
+1. Admin creates products and subscription plans.
+2. Staff registers customers.
+3. Staff generates a quotation based on the customer's requirements.
+4. Customer reviews and accepts the quotation.
+5. The accepted quotation is converted into a subscription.
+6. The subscription becomes active.
+7. The system automatically generates invoices according to the billing cycle.
+8. Payments are recorded and allocated to invoices.
+9. The dashboard and reports update to reflect the latest business activity.
+
+## User Roles
+
+- **Admin:** Manages the complete platform, users, products, plans, subscriptions, billing, and reports.
+- **Staff:** Handles customers, quotations, subscriptions, invoices, and payment operations.
+- **Customer:** Views personal subscriptions, quotations, invoices, and payment history.
+
+## Expected Outcome
+
+The final goal is to build a simple, reliable, and centralized subscription management system that reduces manual administrative work, automates recurring billing operations, improves payment tracking, and provides businesses with a clear overview of their subscription activities.
 
 ---
 
-## Problem statement coverage
-
-| Problem scene (Odoo PDF) | Implementation |
-|---|---|
-| 1. A new customer signs up | Custom user model with roles: Admin, Staff, and Customer. Online registration validates passwords (minimum 8 characters, uppercase, lowercase, special character). Role-based views: Admin manages the workspace, Staff handles daily records, and Customers use an isolated self-service portal. |
-| 2. Launching a new plan | Product catalog with sales and cost price, tax rates, and price-adjusting variants (e.g. brand Odoo Edition adds ₹560.00). Plans support daily, weekly, monthly, and yearly intervals with toggles for auto-close, early closure, pause, and renewal. |
-| 3. Turning a quote into a subscription | Quotation builder with payment terms and item totals. Full lifecycle: Draft → Sent → Accepted / Rejected → Converted. One-click conversion to a subscription with duplicate conversion prevention. |
-| 4. Billing day | Automated recurring billing engine (`manage.py run_billing_day` and UI button). Generates invoices for eligible active subscriptions due on or before the selected date. Unique database constraint `(subscription, billing_period_start, billing_period_end)` prevents duplicate invoices on retry. PDF invoice generation using ReportLab. |
-| 5. A customer asks for a better price | Discount rules: percentage or fixed amount, minimum spend or quantity, usage limits, and product or subscription scope. Verified and applied directly to invoice lines. |
-| 6. The money comes in | Payments via bank transfer, UPI, card, and cash. Full and partial allocation to invoices with real time balance calculation and automatic status changes to paid. Overdue detection based on invoice due date. |
-| 7. The finance lead at end of month | Control Tower dashboard displaying active and paused subscriptions, normalized MRR, invoiced revenue vs. cash collected, and overdue balances. |
-
----
-
-## Quickstart
-
-### 1. Backend (Django 6.1 + DRF)
-
-```bash
-cd backend
-
-# Activate virtual environment
-source venv/bin/activate
-
-# Install dependencies (if not already installed)
-pip install -r requirements.txt
-
-# Run migrations and seed demo data
-python manage.py migrate
-python manage.py seed_demo_data
-
-# (Optional) Test the recurring billing engine
-python manage.py run_billing_day
-
-# Start Django server (port 8000)
-python manage.py runserver
-```
-
-### 2. Frontend (React 19 + Vite + TypeScript + Tailwind)
-
-```bash
-cd frontend
-
-# Install dependencies
-npm install
-
-# Run unit tests
-npm run test
-
-# Start Vite dev server (port 5173)
-npm run dev
-```
-
-The frontend runs at `http://localhost:5173`.
-
----
-
-## Demo accounts
-
-The login screen includes quick fill buttons and a topbar role switcher:
-
-| Role | Email | Password | Access |
-|---|---|---|---|
-| Admin | `admin@brightloop.io` | `Brightloop@2026` | Full workspace access: catalog, plans, discounts, billing engine, and control tower. |
-| Staff | `staff@brightloop.io` | `Brightloop@2026` | Day-to-day operations: customers, quotes, subscriptions, invoices, and payments. |
-| Customer | `alex@acmecorp.com` | `Brightloop@2026` | Customer portal: view own subscriptions, accept quotes, download invoice PDFs, make payments. |
-
----
-
-## Automated test verification
-
-- **Backend tests** (models, variant pricing, quote conversion idempotency, billing retry safety, partial payment reconciliation):
-  ```bash
-  cd backend
-  python manage.py test tests
-  # Ran 4 tests in 0.23s -> OK
-  ```
-
-- **Frontend tests** (UI primitives, states, badges, dialogs, pagination, decimal math):
-  ```bash
-  cd frontend
-  npm run test
-  # 11 test files passed, 48 of 48 tests passed
-  ```
-
-- **Typecheck and build**:
-  ```bash
-  cd frontend
-  npx tsc --noEmit
-  npm run build
-  ```
+**Project:** Brightloop  
+**Event:** Odoo Hackathon 2026  
+**Team:** Talent Not Found
