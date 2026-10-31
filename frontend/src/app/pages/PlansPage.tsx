@@ -239,3 +239,4 @@ export function PlansPage() {
     </div>
   );
 }
+

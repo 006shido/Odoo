@@ -25,3 +25,4 @@ class ProductSerializer(serializers.ModelSerializer):
             'tax', 'tax_rate', 'notes', 'is_active', 'variants', 'created_at'
         ]
         read_only_fields = ['id', 'created_at']
+

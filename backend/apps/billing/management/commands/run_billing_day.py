@@ -26,3 +26,4 @@ class Command(BaseCommand):
             f'- Invoices skipped (already billed): {run.invoices_skipped}\n'
             f'- Total billed: ₹{run.total_billed_amount:,.2f}'
         ))
+

@@ -61,3 +61,4 @@ class Discount(models.Model):
             discount = (subtotal * (self.value / Decimal('100.00'))).quantize(Decimal('0.01'))
             return min(subtotal, discount)
         return min(subtotal, self.value)
+

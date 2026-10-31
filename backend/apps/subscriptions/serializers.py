@@ -37,3 +37,4 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             'notes', 'line_items', 'events', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'subscription_number', 'created_at', 'updated_at']
+

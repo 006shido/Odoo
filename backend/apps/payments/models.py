@@ -42,3 +42,4 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"{self.payment_number} - ₹{self.amount} ({self.payment_method})"
+

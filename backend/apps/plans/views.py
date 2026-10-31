@@ -9,3 +9,4 @@ class SubscriptionPlanViewSet(viewsets.ModelViewSet):
 class PlanItemViewSet(viewsets.ModelViewSet):
     queryset = PlanItem.objects.all().select_related('product', 'variant')
     serializer_class = PlanItemSerializer
+

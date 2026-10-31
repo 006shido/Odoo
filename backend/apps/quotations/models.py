@@ -60,3 +60,4 @@ class QuotationLineItem(models.Model):
 
     def __str__(self):
         return f"{self.quotation.quotation_number} -> {self.product.name} x{self.quantity}"
+

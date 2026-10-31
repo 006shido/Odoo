@@ -16,3 +16,4 @@ urlpatterns = [
     path('forgot-password/', forgot_password_view, name='auth-forgot-password'),
     path('', include(router.urls)),
 ]
+

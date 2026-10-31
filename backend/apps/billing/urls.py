@@ -10,3 +10,4 @@ urlpatterns = [
     path('run/', trigger_billing_run, name='trigger-billing-run'),
     path('', include(router.urls)),
 ]
+

@@ -53,3 +53,4 @@ class PlanItem(models.Model):
 
     def __str__(self):
         return f"{self.plan.name} -> {self.product.name} x{self.quantity}"
+

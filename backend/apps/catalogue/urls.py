@@ -10,3 +10,4 @@ router.register(r'variants', ProductVariantViewSet, basename='variant')
 urlpatterns = [
     path('', include(router.urls)),
 ]
+

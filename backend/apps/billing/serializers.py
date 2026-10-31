@@ -30,3 +30,4 @@ class BillingRunSerializer(serializers.ModelSerializer):
     class Meta:
         model = BillingRun
         fields = '__all__'
+

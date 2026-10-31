@@ -64,3 +64,4 @@ def trigger_billing_run(request):
 class BillingRunViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = BillingRun.objects.all().order_by('-started_at')
     serializer_class = BillingRunSerializer
+

@@ -22,3 +22,4 @@ class SubscriptionPlanSerializer(serializers.ModelSerializer):
             'can_close_early', 'can_pause', 'can_renew', 'is_active', 'items', 'created_at'
         ]
         read_only_fields = ['id', 'created_at']
+

@@ -137,3 +137,4 @@ def generate_invoice_pdf(invoice) -> bytes:
     # Build PDF
     doc.build(story)
     return buffer.getvalue()
+

@@ -128,3 +128,4 @@ class QuotationViewSet(viewsets.ModelViewSet):
             'subscription_id': str(subscription.id),
             'subscription_number': subscription.subscription_number,
         })
+

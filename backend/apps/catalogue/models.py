@@ -53,3 +53,4 @@ class ProductVariant(models.Model):
     @property
     def effective_price(self):
         return self.product.sales_price + self.price_modifier
+

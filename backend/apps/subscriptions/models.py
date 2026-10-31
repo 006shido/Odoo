@@ -71,3 +71,4 @@ class SubscriptionEvent(models.Model):
 
     def __str__(self):
         return f"{self.subscription.subscription_number}: {self.from_status} -> {self.to_status} at {self.timestamp}"
+

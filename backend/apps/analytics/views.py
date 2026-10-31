@@ -106,3 +106,4 @@ def finance_dashboard_metrics(request):
         'recent_invoices': recent_invoices,
         'alerts': alerts,
     })
+

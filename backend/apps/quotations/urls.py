@@ -8,3 +8,4 @@ router.register(r'quotations', QuotationViewSet, basename='quotation')
 urlpatterns = [
     path('', include(router.urls)),
 ]
+

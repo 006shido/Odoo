@@ -154,3 +154,4 @@ class SubscriptionSystemTestCase(TestCase):
         self.assertEqual(inv.paid_amount, Decimal('1000.00'))
         self.assertEqual(inv.balance_due, Decimal('0.00'))
         self.assertEqual(inv.status, Invoice.Status.PAID)
+

@@ -88,3 +88,4 @@ class BillingRun(models.Model):
 
     def __str__(self):
         return f"Billing Run {self.run_date} ({self.invoices_created} invoices, ₹{self.total_billed_amount})"
+

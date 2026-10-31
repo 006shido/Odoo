@@ -84,3 +84,4 @@ class CustomerViewSet(viewsets.ModelViewSet):
         if user.role == CustomUser.Role.CUSTOMER:
             return Customer.objects.filter(user=user)
         return Customer.objects.all().order_by('-created_at')
+

@@ -101,3 +101,4 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
         sub.save(update_fields=['status', 'closed_at', 'close_reason'])
         self._record_event(sub, old_status, sub.status, reason)
         return Response({'message': f'Subscription {sub.subscription_number} closed.'})
+

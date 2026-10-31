@@ -13,3 +13,4 @@ class ProductViewSet(viewsets.ModelViewSet):
 class ProductVariantViewSet(viewsets.ModelViewSet):
     queryset = ProductVariant.objects.all().select_related('product').order_by('-created_at')
     serializer_class = ProductVariantSerializer
+

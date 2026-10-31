@@ -13,3 +13,4 @@ class DiscountSerializer(serializers.ModelSerializer):
             'times_used', 'is_active', 'created_at'
         ]
         read_only_fields = ['id', 'times_used', 'created_at']
+

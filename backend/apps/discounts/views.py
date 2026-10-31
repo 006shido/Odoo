@@ -13,3 +13,4 @@ class DiscountViewSet(viewsets.ModelViewSet):
     queryset = Discount.objects.all().select_related('specific_product').order_by('-created_at')
     serializer_class = DiscountSerializer
     permission_classes = [IsAdminOrReadOnly]
+

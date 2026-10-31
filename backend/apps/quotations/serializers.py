@@ -27,3 +27,4 @@ class QuotationSerializer(serializers.ModelSerializer):
             'notes', 'line_items', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'quotation_number', 'created_at', 'updated_at']
+

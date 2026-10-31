@@ -20,3 +20,4 @@ class PaymentViewSet(viewsets.ModelViewSet):
         count = Payment.objects.count() + 1
         pay_num = f"PAY-{timezone.now().year}-{count:05d}"
         serializer.save(payment_number=pay_num)
+
