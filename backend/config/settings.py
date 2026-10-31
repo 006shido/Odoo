@@ -114,3 +114,6 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000',
     'http://127.0.0.1:8000',
 ]
+
+# Explicit opt-in; endpoint also requires DEBUG and a loopback request.
+ENABLE_LOCAL_DEMO_LOGIN = os.environ.get('ENABLE_LOCAL_DEMO_LOGIN', 'False') == 'True'

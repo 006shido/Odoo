@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import {
   ArrowRight,
@@ -36,6 +36,16 @@ export function LoginPage() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
+  const [demoEnabled, setDemoEnabled] = useState(false);
+  useEffect(() => { api.get<{enabled:boolean}>('/auth/demo-login/').then(result=>setDemoEnabled(result.enabled)).catch(()=>setDemoEnabled(false)); }, []);
+  const demoLogin = async (role: 'admin' | 'staff' | 'customer') => {
+    setBusy(true); setError('');
+    try {
+      const result = await api.post<{user:AuthUser}>('/auth/demo-login/', {role});
+      await startSession(result.user);
+    } catch { setError('Could not open this demo account. Please try again.'); }
+    finally { setBusy(false); }
+  };
 
   const startSession = async (user?: AuthUser) => {
     if (user) await setCurrentUser(user);
@@ -166,6 +176,12 @@ export function LoginPage() {
               {mode === 'signin' && <button type="button" onClick={() => { setMode('create'); setError(''); setNotice(''); }} className="font-medium text-[#737d78] hover:text-[#17211d]">New customer? <span className="text-emerald-800">Create account</span></button>}
             </div>
 
+            {demoEnabled && <div className="mt-7 border-t border-[#e4e8e5] pt-5">
+              <p className="mb-3 text-center text-xs font-semibold text-[#737d78]">Local demo access</p>
+              <div className="grid grid-cols-3 gap-2">
+                {(['customer', 'admin', 'staff'] as const).map(role => <Button key={role} type="button" variant="outline" disabled={busy} onClick={()=>void demoLogin(role)} className="h-11 rounded-xl border-[#dce5df] bg-white text-[#123d32] capitalize hover:bg-emerald-50">{role} Login</Button>)}
+              </div>
+            </div>}
             <p className="mt-8 text-center text-[11px] text-[#9aa39e]">All accounts use secure server authentication.</p>
           </div>
           <div className="mx-auto flex w-full max-w-[440px] justify-between border-t border-[#e4e8e5] pt-4 text-[11px] text-[#9aa39e]"><span>© 2026 Brightloop</span><span className="inline-flex items-center gap-1"><LockKeyhole className="h-3 w-3" />Secure access</span></div>
