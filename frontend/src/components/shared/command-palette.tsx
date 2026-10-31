@@ -197,32 +197,32 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/35 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
+        className="fixed inset-0 bg-black/40 transition-opacity animate-in fade-in duration-150"
         onClick={onClose}
       />
 
       {/* Modal Dialog */}
-      <div className="relative w-full max-w-xl rounded-3xl bg-surface/90 dark:bg-surface/85 backdrop-blur-2xl border border-border/80 shadow-apple-floating overflow-hidden z-10 animate-in zoom-in-95 duration-200 ease-out">
+      <div className="relative w-full max-w-xl rounded-xl bg-surface border border-border shadow-xl overflow-hidden z-10 animate-in zoom-in-95 duration-150">
         {/* Search Input Bar */}
-        <div className="flex items-center px-4 py-3.5 border-b border-border/60 gap-3">
-          <Search className="h-5 w-5 text-accent shrink-0" />
+        <div className="flex items-center px-4 py-3 border-b border-border gap-3">
+          <Search className="h-4 w-4 text-text-tertiary shrink-0" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search customers, subscriptions, invoices, or type a command..."
-            className="flex-1 bg-transparent text-text-primary text-sm font-medium placeholder:text-text-tertiary focus:outline-none"
+            className="flex-1 bg-transparent text-text-primary text-sm placeholder:text-text-tertiary focus:outline-none"
             autoFocus
           />
           {query ? (
             <button
               onClick={() => setQuery('')}
-              className="text-text-tertiary hover:text-text-primary p-1 rounded-full active:scale-90"
+              className="text-text-tertiary hover:text-text-primary p-1 rounded"
             >
               <X className="h-4 w-4" />
             </button>
           ) : (
-            <span className="text-[10px] font-semibold text-text-tertiary bg-surface-secondary px-2 py-0.5 rounded-md border border-border/60 shadow-2xs">
+            <span className="text-[10px] font-medium text-text-tertiary bg-surface-secondary px-1.5 py-0.5 rounded border border-border">
               ESC
             </span>
           )}

@@ -4,30 +4,30 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-150 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:pointer-events-none disabled:opacity-50 select-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:pointer-events-none disabled:opacity-50 select-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
   {
     variants: {
       variant: {
         default:
-          'bg-accent text-accent-text shadow-xs hover:bg-accent-hover hover:shadow-sm active:bg-accent',
+          'bg-accent text-accent-text hover:bg-accent-hover shadow-xs',
         secondary:
-          'bg-surface-secondary text-text-primary border border-border/40 shadow-xs hover:bg-surface-tertiary',
+          'bg-surface-secondary text-text-primary border border-border hover:bg-surface-tertiary',
         outline:
-          'border border-border/80 bg-surface/80 backdrop-blur-sm text-text-primary shadow-xs hover:bg-surface-secondary hover:border-border',
+          'border border-border bg-surface text-text-primary hover:bg-surface-secondary',
         ghost:
           'text-text-secondary hover:bg-surface-secondary hover:text-text-primary',
         destructive:
-          'bg-error text-white shadow-xs hover:bg-error/90 hover:shadow-sm',
+          'bg-error text-white hover:bg-error/90 shadow-xs',
         link:
-          'text-accent underline-offset-4 hover:underline active:scale-100',
+          'text-accent underline-offset-4 hover:underline p-0 h-auto font-normal',
         glass:
-          'apple-glass text-text-primary hover:bg-surface/90 shadow-xs',
+          'border border-border bg-surface text-text-primary hover:bg-surface-secondary',
       },
       size: {
-        sm: 'h-8 rounded-lg px-3 text-xs',
-        default: 'h-9 px-4 py-2',
-        lg: 'h-10 rounded-xl px-5 text-sm font-medium',
-        icon: 'h-9 w-9 rounded-xl',
+        sm: 'h-8 rounded-md px-3 text-xs',
+        default: 'h-9 px-4 py-2 text-sm',
+        lg: 'h-10 rounded-lg px-5 text-sm font-medium',
+        icon: 'h-9 w-9 rounded-lg',
       },
     },
     defaultVariants: {

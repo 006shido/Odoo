@@ -2,17 +2,11 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import {
   TrendingUp,
-  Zap,
-  DollarSign,
-  AlertCircle,
-  Clock,
-  ArrowUpRight,
   Plus,
   RefreshCw,
   Calendar,
   ChevronRight,
-  ShieldAlert,
-  FileText,
+  DollarSign,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -28,7 +22,6 @@ import {
 import { useSubscription } from '@/lib/store/subscriptionStore';
 import { formatCurrency, addDecimals } from '@/lib/decimal';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 export function DashboardPage() {
@@ -37,7 +30,6 @@ export function DashboardPage() {
     subscriptions,
     invoices,
     payments,
-    quotations,
     customers,
     settings,
     runBillingEngine,
@@ -50,7 +42,7 @@ export function DashboardPage() {
   const activeSubs = subscriptions.filter((s) => s.status === 'active');
   const pausedSubs = subscriptions.filter((s) => s.status === 'paused');
 
-  // Compute MRR (Normalized monthly recurring revenue)
+  // Compute MRR
   const mrrAmount = useMemo(() => {
     let total = '0.00';
     activeSubs.forEach((sub) => {
@@ -92,26 +84,13 @@ export function DashboardPage() {
     (inv) => inv.status !== 'void' && inv.status !== 'paid' && (inv.is_overdue || inv.due_date < '2026-10-31'),
   );
 
-  // Upcoming Renewals (next 14 days)
+  // Upcoming Renewals
   const upcomingRenewals = useMemo(() => {
     return activeSubs
       .filter((s) => s.next_billing_date)
       .sort((a, b) => a.next_billing_date.localeCompare(b.next_billing_date))
       .slice(0, 4);
   }, [activeSubs]);
-
-  // Active Commercial Pipeline from Quotations
-  const pendingQuotes = useMemo(() => {
-    return quotations.filter((q) => q.status === 'sent' || q.status === 'accepted');
-  }, [quotations]);
-
-  const quotePipelineTotal = useMemo(() => {
-    let sum = '0.00';
-    pendingQuotes.forEach((q) => {
-      sum = addDecimals(sum, q.total);
-    });
-    return sum;
-  }, [pendingQuotes]);
 
   // Chart data for revenue trend
   const revenueChartData = useMemo(() => {
@@ -128,10 +107,10 @@ export function DashboardPage() {
   // Status breakdown chart data
   const statusPieData = useMemo(() => {
     return [
-      { name: 'Active', value: activeSubs.length, color: '#34C759' },
-      { name: 'Paused', value: pausedSubs.length, color: '#FF9500' },
-      { name: 'Draft', value: subscriptions.filter((s) => s.status === 'draft').length, color: '#8E8E93' },
-      { name: 'Closed', value: subscriptions.filter((s) => s.status === 'closed').length, color: '#D1D1D6' },
+      { name: 'Active', value: activeSubs.length, color: '#16a34a' },
+      { name: 'Paused', value: pausedSubs.length, color: '#d97706' },
+      { name: 'Draft', value: subscriptions.filter((s) => s.status === 'draft').length, color: '#64748b' },
+      { name: 'Closed', value: subscriptions.filter((s) => s.status === 'closed').length, color: '#94a3b8' },
     ].filter((item) => item.value > 0);
   }, [activeSubs, pausedSubs, subscriptions]);
 
@@ -140,281 +119,175 @@ export function DashboardPage() {
     setTimeout(() => {
       runBillingEngine();
       setIsBillingRunning(false);
-    }, 600);
+    }, 500);
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
-      {/* Top Header & Actions */}
+    <div className="space-y-6">
+      {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-text-primary">Overview</h2>
-          <p className="text-sm text-text-secondary mt-1">
+          <h2 className="text-xl font-bold text-text-primary">Overview</h2>
+          <p className="text-xs text-text-secondary mt-0.5">
             Subscriptions, cash collected, and upcoming renewals.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={handleQuickBillingRun}
             disabled={isBillingRunning}
-            className="rounded-xl border-border bg-surface shadow-xs"
           >
             <RefreshCw className={cn('h-3.5 w-3.5 mr-1.5', isBillingRunning && 'animate-spin')} />
-            {isBillingRunning ? 'Running Billing...' : 'Run Billing Engine'}
+            {isBillingRunning ? 'Running...' : 'Run Billing'}
           </Button>
-          <Button
-            size="sm"
-            onClick={() => navigate('/quotations')}
-            className="rounded-xl shadow-xs"
-          >
+          <Button size="sm" onClick={() => navigate('/quotations')}>
             <Plus className="h-4 w-4 mr-1.5" />
             New Quotation
           </Button>
         </div>
       </div>
 
-      {/* Apple Wallet Style KPI Cards */}
+      {/* KPI Cards: Clean, simple, human-designed */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: MRR */}
-        <div className="apple-card p-6 flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
-              Monthly Recurring (MRR)
-            </span>
-            <div className="p-2 rounded-xl bg-accent/10 text-accent">
-              <Zap className="h-4 w-4" />
-            </div>
+        <div className="rounded-xl border border-border bg-surface p-5">
+          <p className="text-xs font-medium text-text-secondary">Monthly Recurring (MRR)</p>
+          <div className="mt-2 text-2xl font-bold text-text-primary tabular-nums">
+            {formatCurrency(mrrAmount, settings.currency_symbol)}
           </div>
-          <div className="mt-4">
-            <div className="text-3xl font-bold tracking-tight text-text-primary tabular-nums">
-              {formatCurrency(mrrAmount, settings.currency_symbol)}
-            </div>
-            <div className="flex items-center gap-1.5 mt-2 text-xs font-medium text-success">
-              <TrendingUp className="h-3.5 w-3.5" />
-              <span>+18.4% from last month</span>
-            </div>
-          </div>
+          <p className="text-xs text-success mt-1 flex items-center gap-1 font-medium">
+            <TrendingUp className="h-3 w-3" /> +18.4% this month
+          </p>
         </div>
 
         {/* Card 2: Total Collected Cash */}
-        <div className="apple-card p-6 flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
-              Cash Collected
-            </span>
-            <div className="p-2 rounded-xl bg-success-light text-success">
-              <DollarSign className="h-4 w-4" />
-            </div>
+        <div className="rounded-xl border border-border bg-surface p-5">
+          <p className="text-xs font-medium text-text-secondary">Cash Collected</p>
+          <div className="mt-2 text-2xl font-bold text-text-primary tabular-nums">
+            {formatCurrency(totalCollected, settings.currency_symbol)}
           </div>
-          <div className="mt-4">
-            <div className="text-3xl font-bold tracking-tight text-text-primary tabular-nums">
-              {formatCurrency(totalCollected, settings.currency_symbol)}
-            </div>
-            <p className="text-xs text-text-secondary mt-2">
-              Across {payments.length} verified transactions
-            </p>
-          </div>
+          <p className="text-xs text-text-tertiary mt-1">
+            Across {payments.length} transactions
+          </p>
         </div>
 
         {/* Card 3: Active Subscriptions */}
-        <div className="apple-card p-6 flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
-              Active Subscriptions
-            </span>
-            <div className="p-2 rounded-xl bg-accent/10 text-accent">
-              <Clock className="h-4 w-4" />
-            </div>
+        <div className="rounded-xl border border-border bg-surface p-5">
+          <p className="text-xs font-medium text-text-secondary">Active Subscriptions</p>
+          <div className="mt-2 text-2xl font-bold text-text-primary tabular-nums">
+            {activeSubs.length}
           </div>
-          <div className="mt-4">
-            <div className="text-3xl font-bold tracking-tight text-text-primary tabular-nums">
-              {activeSubs.length}
-            </div>
-            <div className="flex items-center gap-2 mt-2">
-              <Badge variant="outline" className="text-[11px] rounded-full">
-                {pausedSubs.length} paused
-              </Badge>
-              <span className="text-xs text-text-secondary">
-                {customers.length} total customers
-              </span>
-            </div>
-          </div>
+          <p className="text-xs text-text-tertiary mt-1">
+            {pausedSubs.length} paused • {customers.length} customers
+          </p>
         </div>
 
-        {/* Card 4: Outstanding & Overdue */}
-        <div className="apple-card p-6 flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
-              Outstanding Balance
-            </span>
-            <div className="p-2 rounded-xl bg-warning-light text-warning">
-              <AlertCircle className="h-4 w-4" />
-            </div>
+        {/* Card 4: Outstanding Balance */}
+        <div className="rounded-xl border border-border bg-surface p-5">
+          <p className="text-xs font-medium text-text-secondary">Outstanding Balance</p>
+          <div className="mt-2 text-2xl font-bold text-text-primary tabular-nums">
+            {formatCurrency(outstandingBalance, settings.currency_symbol)}
           </div>
-          <div className="mt-4">
-            <div className="text-3xl font-bold tracking-tight text-text-primary tabular-nums">
-              {formatCurrency(outstandingBalance, settings.currency_symbol)}
-            </div>
-            <div className="flex items-center gap-2 mt-2">
-              {overdueInvoices.length > 0 ? (
-                <span className="text-xs font-semibold text-error flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full bg-error animate-pulse" />
-                  {overdueInvoices.length} overdue invoice(s)
-                </span>
-              ) : (
-                <span className="text-xs text-success">All invoices current</span>
-              )}
-            </div>
-          </div>
+          <p className="text-xs mt-1 font-medium">
+            {overdueInvoices.length > 0 ? (
+              <span className="text-error">{overdueInvoices.length} overdue invoices</span>
+            ) : (
+              <span className="text-success">All accounts current</span>
+            )}
+          </p>
         </div>
       </div>
-
-      {/* Attention Banner */}
-      {(overdueInvoices.length > 0 || pausedSubs.length > 0) && (
-        <div className="p-4 rounded-2xl bg-warning-light/60 border border-warning/30 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <ShieldAlert className="h-5 w-5 text-warning shrink-0" />
-            <div>
-              <p className="text-sm font-semibold text-text-primary">
-                Accounts needing review
-              </p>
-              <p className="text-xs text-text-secondary">
-                {overdueInvoices.length} overdue invoice(s) totaling{' '}
-                {formatCurrency(
-                  overdueInvoices.reduce((acc, i) => addDecimals(acc, i.balance_due), '0.00'),
-                  settings.currency_symbol,
-                )}{' '}
-                and {pausedSubs.length} paused subscription(s).
-              </p>
-            </div>
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => navigate('/control-tower')}
-            className="rounded-xl shrink-0 bg-surface"
-          >
-            Open Control Tower <ArrowUpRight className="ml-1.5 h-3.5 w-3.5" />
-          </Button>
-        </div>
-      )}
-
-      {/* Commercial Pipeline Highlight */}
-      {pendingQuotes.length > 0 && (
-        <div className="p-4 rounded-2xl bg-accent/10 border border-accent/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-accent text-white shrink-0 shadow-xs">
-              <FileText className="h-4 w-4" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-text-primary">
-                Active Commercial Pipeline: {formatCurrency(quotePipelineTotal, settings.currency_symbol)}
-              </p>
-              <p className="text-xs text-text-secondary">
-                {pendingQuotes.length} active proposal(s) awaiting conversion or customer decision.
-              </p>
-            </div>
-          </div>
-          <Button
-            size="sm"
-            onClick={() => navigate('/quotations')}
-            className="rounded-xl shrink-0"
-          >
-            Review Proposals <ArrowUpRight className="ml-1.5 h-3.5 w-3.5" />
-          </Button>
-        </div>
-      )}
 
       {/* Main Grid: Revenue Chart + Subscriptions Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Revenue Trend Area Chart */}
-        <div className="lg:col-span-2 apple-card p-6 flex flex-col justify-between">
-          <div className="flex items-center justify-between pb-4 border-b border-border/60">
+        <div className="lg:col-span-2 rounded-xl border border-border bg-surface p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-3 border-b border-border">
             <div>
-              <h3 className="text-base font-semibold text-text-primary">Revenue Trend</h3>
+              <h3 className="text-sm font-semibold text-text-primary">Revenue Trend</h3>
               <p className="text-xs text-text-secondary mt-0.5">
-                Invoiced revenue vs. cash collected over time
+                Invoiced revenue vs. cash collected
               </p>
             </div>
-            <div className="apple-segmented-container">
+            <div className="flex items-center bg-surface-secondary border border-border rounded-lg p-0.5 text-xs">
               <button
                 onClick={() => setRevenuePeriod('6m')}
-                className={cn('apple-segmented-item', revenuePeriod === '6m' && 'active')}
+                className={cn('px-2.5 py-1 rounded-md font-medium transition-colors', revenuePeriod === '6m' ? 'bg-surface text-text-primary shadow-xs' : 'text-text-secondary')}
               >
                 6 Months
               </button>
               <button
                 onClick={() => setRevenuePeriod('12m')}
-                className={cn('apple-segmented-item', revenuePeriod === '12m' && 'active')}
+                className={cn('px-2.5 py-1 rounded-md font-medium transition-colors', revenuePeriod === '12m' ? 'bg-surface text-text-primary shadow-xs' : 'text-text-secondary')}
               >
                 12 Months
               </button>
             </div>
           </div>
 
-          <div className="h-72 mt-4 w-full">
+          <div className="h-64 mt-4 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={revenueChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorInvoiced" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#007AFF" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#007AFF" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0.0} />
                   </linearGradient>
                   <linearGradient id="colorCollected" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#34C759" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#34C759" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#16a34a" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="#16a34a" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="month" stroke="#8E8E93" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#8E8E93" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}`} />
+                <XAxis dataKey="month" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}`} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'rgba(28, 28, 30, 0.9)',
-                    borderRadius: '12px',
+                    backgroundColor: '#0f172a',
+                    borderRadius: '8px',
                     border: 'none',
-                    color: '#FFFFFF',
+                    color: '#ffffff',
                     fontSize: '12px',
                   }}
                   formatter={(val: any) => [val ? `$${Number(val).toLocaleString()}` : '$0', '']}
                 />
-                <Area type="monotone" dataKey="invoiced" name="Invoiced" stroke="#007AFF" strokeWidth={2} fillOpacity={1} fill="url(#colorInvoiced)" />
-                <Area type="monotone" dataKey="collected" name="Collected Cash" stroke="#34C759" strokeWidth={2} fillOpacity={1} fill="url(#colorCollected)" />
+                <Area type="monotone" dataKey="invoiced" name="Invoiced" stroke="#2563eb" strokeWidth={2} fillOpacity={1} fill="url(#colorInvoiced)" />
+                <Area type="monotone" dataKey="collected" name="Collected" stroke="#16a34a" strokeWidth={2} fillOpacity={1} fill="url(#colorCollected)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
 
-          <div className="flex items-center justify-center gap-6 pt-3 border-t border-border/60 text-xs text-text-secondary">
+          <div className="flex items-center justify-center gap-6 pt-3 border-t border-border text-xs text-text-secondary">
             <div className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full bg-accent" />
+              <span className="h-2.5 w-2.5 rounded-full bg-accent" />
               <span>Invoiced Revenue</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full bg-success" />
+              <span className="h-2.5 w-2.5 rounded-full bg-success" />
               <span>Collected Cash</span>
             </div>
           </div>
         </div>
 
         {/* Subscription Status Breakdown */}
-        <div className="apple-card p-6 flex flex-col justify-between">
+        <div className="rounded-xl border border-border bg-surface p-5 flex flex-col justify-between">
           <div>
-            <h3 className="text-base font-semibold text-text-primary">Subscription Health</h3>
-            <p className="text-xs text-text-secondary mt-0.5">Current portfolio distribution</p>
+            <h3 className="text-sm font-semibold text-text-primary">Subscription Status</h3>
+            <p className="text-xs text-text-secondary mt-0.5">Active portfolio breakdown</p>
           </div>
 
-          <div className="h-52 w-full flex items-center justify-center relative my-2">
+          <div className="h-48 w-full flex items-center justify-center relative my-2">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={statusPieData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={4}
+                  innerRadius={50}
+                  outerRadius={70}
+                  paddingAngle={3}
                   dataKey="value"
                 >
                   {statusPieData.map((entry, index) => (
@@ -424,18 +297,18 @@ export function DashboardPage() {
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-2xl font-bold text-text-primary">{subscriptions.length}</span>
-              <span className="text-[11px] font-medium text-text-secondary uppercase tracking-wider">
+              <span className="text-xl font-bold text-text-primary">{subscriptions.length}</span>
+              <span className="text-[10px] text-text-tertiary uppercase tracking-wider">
                 Total
               </span>
             </div>
           </div>
 
-          <div className="space-y-2 pt-2 border-t border-border/60 text-xs">
+          <div className="space-y-1.5 pt-2 border-t border-border text-xs">
             {statusPieData.map((s) => (
               <div key={s.name} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: s.color }} />
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: s.color }} />
                   <span className="text-text-secondary">{s.name}</span>
                 </div>
                 <span className="font-semibold text-text-primary">{s.value}</span>
@@ -448,10 +321,10 @@ export function DashboardPage() {
       {/* Bottom Grid: Upcoming Renewals + Recent Transactions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Upcoming Renewals */}
-        <div className="apple-card p-6">
-          <div className="flex items-center justify-between pb-4 border-b border-border/60">
+        <div className="rounded-xl border border-border bg-surface p-5">
+          <div className="flex items-center justify-between pb-3 border-b border-border">
             <div>
-              <h3 className="text-base font-semibold text-text-primary">Upcoming Renewals</h3>
+              <h3 className="text-sm font-semibold text-text-primary">Upcoming Renewals</h3>
               <p className="text-xs text-text-secondary mt-0.5">
                 Subscriptions scheduled for billing soon
               </p>
@@ -466,31 +339,31 @@ export function DashboardPage() {
             </Button>
           </div>
 
-          <div className="divide-y divide-border/60 mt-2">
+          <div className="divide-y divide-border mt-1">
             {upcomingRenewals.length === 0 ? (
-              <p className="text-sm text-text-tertiary py-8 text-center">No upcoming renewals</p>
+              <p className="text-xs text-text-tertiary py-6 text-center">No upcoming renewals</p>
             ) : (
               upcomingRenewals.map((sub) => (
-                <div key={sub.id} className="py-3.5 flex items-center justify-between gap-4">
+                <div key={sub.id} className="py-3 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-xl bg-surface-secondary flex items-center justify-center text-text-secondary font-semibold text-xs">
+                    <div className="h-8 w-8 rounded-lg bg-surface-secondary flex items-center justify-center text-text-secondary">
                       <Calendar className="h-4 w-4" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-text-primary leading-tight">
+                      <p className="text-xs font-semibold text-text-primary leading-tight">
                         {sub.customer_name}
                       </p>
-                      <p className="text-xs text-text-secondary mt-0.5">
+                      <p className="text-[11px] text-text-secondary mt-0.5">
                         {sub.plan_name} • {sub.number}
                       </p>
                     </div>
                   </div>
 
                   <div className="text-right">
-                    <p className="text-sm font-bold text-text-primary">
+                    <p className="text-xs font-bold text-text-primary tabular-nums">
                       {formatCurrency(sub.total_recurring, settings.currency_symbol)}
                     </p>
-                    <p className="text-xs text-text-tertiary mt-0.5">
+                    <p className="text-[11px] text-text-tertiary mt-0.5">
                       Due: {sub.next_billing_date}
                     </p>
                   </div>
@@ -501,11 +374,11 @@ export function DashboardPage() {
         </div>
 
         {/* Recent Transactions */}
-        <div className="apple-card p-6">
-          <div className="flex items-center justify-between pb-4 border-b border-border/60">
+        <div className="rounded-xl border border-border bg-surface p-5">
+          <div className="flex items-center justify-between pb-3 border-b border-border">
             <div>
-              <h3 className="text-base font-semibold text-text-primary">Recent Transactions</h3>
-              <p className="text-xs text-text-secondary mt-0.5">Payments & billing activities</p>
+              <h3 className="text-sm font-semibold text-text-primary">Recent Payments</h3>
+              <p className="text-xs text-text-secondary mt-0.5">Latest recorded transactions</p>
             </div>
             <Button
               variant="ghost"
@@ -517,28 +390,28 @@ export function DashboardPage() {
             </Button>
           </div>
 
-          <div className="divide-y divide-border/60 mt-2">
+          <div className="divide-y divide-border mt-1">
             {payments.length === 0 ? (
-              <p className="text-sm text-text-tertiary py-8 text-center">No transactions recorded</p>
+              <p className="text-xs text-text-tertiary py-6 text-center">No transactions recorded</p>
             ) : (
               payments.slice(0, 4).map((pay) => (
-                <div key={pay.id} className="py-3.5 flex items-center justify-between gap-4">
+                <div key={pay.id} className="py-3 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-xl bg-success-light text-success flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-lg bg-success-light text-success flex items-center justify-center">
                       <DollarSign className="h-4 w-4" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-text-primary leading-tight">
+                      <p className="text-xs font-semibold text-text-primary leading-tight">
                         {pay.customer_name}
                       </p>
-                      <p className="text-xs text-text-secondary mt-0.5 capitalize">
+                      <p className="text-[11px] text-text-secondary mt-0.5 capitalize">
                         {pay.method.replace('_', ' ')} • Ref: {pay.reference}
                       </p>
                     </div>
                   </div>
 
                   <div className="text-right">
-                    <p className="text-sm font-bold text-success">
+                    <p className="text-xs font-bold text-success tabular-nums">
                       +{formatCurrency(pay.amount, settings.currency_symbol)}
                     </p>
                     <p className="text-[11px] text-text-tertiary mt-0.5">
