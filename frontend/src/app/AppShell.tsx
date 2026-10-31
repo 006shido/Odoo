@@ -127,7 +127,7 @@ export function AppShell() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-text-primary flex antialiased relative overflow-hidden">
+    <div className="min-h-dvh bg-background text-text-primary flex antialiased relative overflow-hidden">
       {/* Ambient Apple Gaussian Backlights (Light & Dark Vibrancy) */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
         <div className="absolute -top-[15%] -right-[10%] w-[550px] h-[550px] rounded-full bg-accent/8 dark:bg-accent/15 blur-[140px] transform-gpu" />
@@ -162,6 +162,7 @@ export function AppShell() {
           </div>
           <button
             onClick={() => setMobileMenuOpen(false)}
+            aria-label="Close navigation menu"
             className="lg:hidden p-1 rounded-md text-text-secondary hover:bg-surface-secondary"
           >
             <X className="h-4 w-4" />
@@ -251,12 +252,13 @@ export function AppShell() {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-h-screen lg:pl-60">
+      <div className="flex-1 flex flex-col min-h-dvh lg:pl-60">
         {/* Simple Top Navigation Bar */}
         <header className="sticky top-0 z-30 h-14 bg-surface/80 dark:bg-surface/75 backdrop-blur-2xl border-b border-border/80 flex items-center justify-between px-6 shadow-2xs">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileMenuOpen(true)}
+              aria-label="Open navigation menu"
               className="lg:hidden p-1.5 rounded-lg text-text-secondary hover:bg-surface-secondary"
             >
               <Menu className="h-5 w-5" />
@@ -271,6 +273,7 @@ export function AppShell() {
             {/* Search Button */}
             <button
               onClick={() => setPaletteOpen(true)}
+              aria-label="Search anything"
               className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface/60 hover:bg-surface/80 dark:bg-surface/40 backdrop-blur-md border border-border/80 text-xs text-text-secondary hover:text-text-primary transition-all shadow-2xs"
             >
               <Search className="h-3.5 w-3.5 text-text-tertiary" />
@@ -284,6 +287,7 @@ export function AppShell() {
             <div className="relative">
               <button
                 onClick={() => setNotifOpen(!notifOpen)}
+                aria-label="Notifications"
                 className="relative p-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface-secondary transition-colors"
                 title="Notifications"
               >
@@ -366,6 +370,7 @@ export function AppShell() {
             {/* Dark/Light mode toggle */}
             <button
               onClick={toggleTheme}
+              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
               className="p-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface-secondary transition-colors"
               title={isDark ? 'Light mode' : 'Dark mode'}
             >

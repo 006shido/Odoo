@@ -105,8 +105,8 @@
   --color-info: var(--info);
   --color-info-light: var(--info-light);
 
-  /* Apple System Typography Stack */
-  --font-family-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  /* Apple Typography Stack (Inter primary per apple-ui-skills) */
+  --font-family-sans: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
   --font-size-base: 1rem;
@@ -131,13 +131,13 @@
   --spacing-20: 5rem;
   --spacing-24: 6rem;
 
-  /* Standard Apple Radii */
+  /* Standard Apple Radii (21px scale per apple-ui-skills) */
   --radius-xs: 0.25rem;
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
-  --radius-2xl: 1.25rem;
+  --radius-2xl: 1.3125rem; /* 21px */
   --radius-3xl: 1.5rem;
   --radius-full: 9999px;
 
@@ -164,7 +164,17 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Tabular Numbers */
+/* Headings with text-balance per apple-ui-skills */
+h1, h2, h3, h4, h5, h6 {
+  text-wrap: balance;
+}
+
+/* Body copy with text-pretty per apple-ui-skills */
+p, li, blockquote {
+  text-wrap: pretty;
+}
+
+/* Tabular Numbers for financial data */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
@@ -179,15 +189,15 @@ body {
   box-shadow: var(--glass-shadow);
 }
 
-/* Apple Frosted Card System */
+/* Apple Frosted Card System (21px radius per apple-ui-skills) */
 .apple-card {
   background-color: var(--glass-surface);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid var(--glass-border);
-  border-radius: 1.25rem;
+  border-radius: 1.3125rem;
   box-shadow: var(--shadow-sm), inset 0 1px 0 0 rgba(255, 255, 255, 0.7);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, background-color 0.2s ease;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, background-color 0.2s ease;
 }
 
 .apple-card:hover {
@@ -266,9 +276,9 @@ body {
   background: var(--color-text-tertiary);
 }
 
-/* Apple Focus Ring */
+/* Apple Focus Ring per apple-ui-skills */
 .focus-ring {
-  @apply outline-none ring-2 ring-accent/40 ring-offset-2 ring-offset-surface;
+  @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-surface;
 }
 
 /* Accessibility: Reduced Transparency Support */
