@@ -2,20 +2,15 @@ import { useState, useMemo } from 'react';
 import {
   Zap,
   Search,
-  Calendar,
   Play,
   Pause,
   RotateCcw,
-  XCircle,
-  Clock,
   History,
   X,
-  Plus,
 } from 'lucide-react';
 import { useSubscription } from '@/lib/store/subscriptionStore';
 import { formatCurrency } from '@/lib/decimal';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { cn } from '@/lib/utils';
 import type { Subscription, SubscriptionStatus } from '@/types';

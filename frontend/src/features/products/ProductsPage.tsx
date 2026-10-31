@@ -4,22 +4,18 @@ import {
   Plus,
   Search,
   Tag,
-  Archive,
   ChevronDown,
   ChevronRight,
-  Sparkles,
   X,
-  Edit2,
 } from 'lucide-react';
 import { useSubscription } from '@/lib/store/subscriptionStore';
 import { formatCurrency } from '@/lib/decimal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import type { Product, ProductVariant } from '@/types';
 
 export function ProductsPage() {
-  const { products, createProduct, updateProduct, settings } = useSubscription();
+  const { products, createProduct, settings } = useSubscription();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [expandedProducts, setExpandedProducts] = useState<Record<string, boolean>>({ 'prod-1': true });
@@ -406,3 +402,4 @@ export function ProductsPage() {
     </div>
   );
 }
+

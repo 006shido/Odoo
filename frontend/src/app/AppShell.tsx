@@ -18,12 +18,15 @@ import {
   Moon,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Menu,
   X,
   ExternalLink,
   CheckCircle2,
   AlertTriangle,
   Info,
+  Plus,
+  Compass,
 } from 'lucide-react';
 import { useSubscription } from '@/lib/store/subscriptionStore';
 import { useTheme } from '@/lib/theme';
@@ -36,10 +39,13 @@ export function AppShell() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [quickActionOpen, setQuickActionOpen] = useState(false);
 
   const {
     currentUser,
     switchRole,
+    switchCustomerUser,
+    customers,
     notifications,
     markNotificationAsRead,
     clearAllNotifications,
@@ -103,32 +109,36 @@ export function AppShell() {
       ],
     },
     {
-      group: 'Intelligence',
+      group: 'Intelligence & Discovery',
       items: [
         { name: 'Reports & Analytics', path: '/reports', icon: BarChart3 },
         { name: 'Customer Portal', path: '/portal', icon: ExternalLink },
-        { name: 'Settings', path: '/settings', icon: Settings },
+        { name: 'Workspace Settings', path: '/settings', icon: Settings },
+        { name: 'Product Tour', path: '/welcome', icon: Compass },
       ],
     },
   ];
 
-  // Helper for current page title
-  const getPageTitle = () => {
+  // Helper for current page title and category
+  const getPageInfo = () => {
     const p = location.pathname;
-    if (p.includes('/control-tower')) return 'Subscription Control Tower';
-    if (p.includes('/customers')) return 'Customer Accounts';
-    if (p.includes('/products')) return 'Product Catalogue & Variants';
-    if (p.includes('/plans')) return 'Subscription Plans & Pricing';
-    if (p.includes('/quotations')) return 'Quotations & Proposals';
-    if (p.includes('/subscriptions')) return 'Subscription Contracts';
-    if (p.includes('/invoices')) return 'Invoices & Recurring Billing';
-    if (p.includes('/payments')) return 'Payments & Allocation';
-    if (p.includes('/discounts')) return 'Discounts & Credits';
-    if (p.includes('/reports')) return 'Financial Reports & Analytics';
-    if (p.includes('/settings')) return 'Workspace Settings';
-    if (p.includes('/portal')) return 'Customer Self-Service Portal';
-    return 'Executive Overview';
+    if (p.includes('/control-tower')) return { category: 'Overview', title: 'Control Tower' };
+    if (p.includes('/customers')) return { category: 'Commercial', title: 'Customer Accounts' };
+    if (p.includes('/products')) return { category: 'Commercial', title: 'Product Catalogue & Variants' };
+    if (p.includes('/plans')) return { category: 'Commercial', title: 'Subscription Plans & Pricing' };
+    if (p.includes('/quotations')) return { category: 'Commercial', title: 'Quotations & Proposals' };
+    if (p.includes('/subscriptions')) return { category: 'Operations', title: 'Subscription Contracts' };
+    if (p.includes('/invoices')) return { category: 'Operations', title: 'Invoices & Billing Engine' };
+    if (p.includes('/payments')) return { category: 'Operations', title: 'Payments & Allocations' };
+    if (p.includes('/discounts')) return { category: 'Operations', title: 'Discounts & Credits' };
+    if (p.includes('/reports')) return { category: 'Intelligence', title: 'Financial Reports & Analytics' };
+    if (p.includes('/settings')) return { category: 'Intelligence', title: 'Workspace Settings' };
+    if (p.includes('/portal')) return { category: 'Portal', title: 'Customer Self-Service' };
+    if (p.includes('/welcome')) return { category: 'Discovery', title: 'Product Overview & Tour' };
+    return { category: 'Overview', title: 'Executive Overview' };
   };
+
+  const pageInfo = getPageInfo();
 
   return (
     <div className="min-h-screen bg-background text-text-primary flex antialiased">
@@ -309,17 +319,120 @@ export function AppShell() {
               <Menu className="h-5 w-5" />
             </button>
             <div>
-              <h1 className="text-lg font-semibold tracking-tight text-text-primary leading-tight">
-                {getPageTitle()}
+              <div className="flex items-center gap-1.5 text-[11px] font-medium text-text-tertiary mb-0.5">
+                <span>Brightloop</span>
+                <span>/</span>
+                <span className="text-text-secondary">{pageInfo.category}</span>
+                <span>/</span>
+                <span className="text-accent font-semibold">{pageInfo.title}</span>
+              </div>
+              <h1 className="text-lg font-bold tracking-tight text-text-primary leading-tight">
+                {pageInfo.title}
               </h1>
-              <p className="text-xs text-text-secondary hidden sm:block">
-                Brightloop Subscription Operations Suite
-              </p>
             </div>
           </div>
 
           {/* Right actions */}
           <div className="flex items-center gap-2.5">
+            {/* Top Bar Role Switcher (Apple Segmented Control) */}
+            <div className="hidden xl:flex items-center bg-surface-secondary/80 p-0.5 rounded-xl border border-border/60 text-xs">
+              {(['admin', 'staff', 'customer'] as UserRole[]).map((r) => (
+                <button
+                  key={r}
+                  onClick={() => {
+                    switchRole(r);
+                    if (r === 'customer') navigate('/portal');
+                  }}
+                  className={cn(
+                    'px-2.5 py-1 rounded-lg font-semibold capitalize transition-all duration-150',
+                    currentUser.role === r
+                      ? 'bg-surface text-accent shadow-xs'
+                      : 'text-text-tertiary hover:text-text-primary',
+                  )}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+
+            {/* Persona Switcher when in Customer role */}
+            {currentUser.role === 'customer' && (
+              <div className="hidden md:flex items-center gap-1 text-xs px-2.5 py-1 rounded-xl bg-accent/10 border border-accent/20 text-accent font-medium">
+                <span>As:</span>
+                <select
+                  value={currentUser.customer_id || customers[0]?.id}
+                  onChange={(e) => switchCustomerUser(e.target.value)}
+                  className="bg-transparent font-semibold cursor-pointer outline-none text-accent"
+                >
+                  {customers.map((c) => (
+                    <option key={c.id} value={c.id} className="text-text-primary bg-surface">
+                      {c.company_name} ({c.name})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Quick Action Button */}
+            <div className="relative">
+              <button
+                onClick={() => setQuickActionOpen(!quickActionOpen)}
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-accent hover:bg-accent/90 text-white text-xs font-semibold shadow-xs transition-colors"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>New</span>
+                <ChevronDown className="h-3 w-3 opacity-70" />
+              </button>
+
+              {quickActionOpen && (
+                <>
+                  <div className="fixed inset-0 z-30" onClick={() => setQuickActionOpen(false)} />
+                  <div className="absolute right-0 mt-2 w-52 rounded-2xl bg-surface/95 dark:bg-surface/90 backdrop-blur-2xl border border-border shadow-2xl p-2 z-40 animate-in fade-in zoom-in-95 duration-150 text-xs space-y-1">
+                    <button
+                      onClick={() => {
+                        navigate('/quotations');
+                        setQuickActionOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left hover:bg-surface-secondary text-text-primary font-medium"
+                    >
+                      <FileText className="h-3.5 w-3.5 text-accent" />
+                      <span>Create Quotation</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        navigate('/customers');
+                        setQuickActionOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left hover:bg-surface-secondary text-text-primary font-medium"
+                    >
+                      <Users className="h-3.5 w-3.5 text-success" />
+                      <span>Add Customer</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        navigate('/control-tower');
+                        setQuickActionOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left hover:bg-surface-secondary text-text-primary font-medium"
+                    >
+                      <ShieldAlert className="h-3.5 w-3.5 text-warning" />
+                      <span>Run Billing Engine</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        navigate('/payments');
+                        setQuickActionOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left hover:bg-surface-secondary text-text-primary font-medium"
+                    >
+                      <CreditCard className="h-3.5 w-3.5 text-accent" />
+                      <span>Record Payment</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+
             {/* Global Search Button */}
             <button
               onClick={() => setPaletteOpen(true)}
@@ -327,7 +440,7 @@ export function AppShell() {
             >
               <Search className="h-3.5 w-3.5 text-text-tertiary" />
               <span className="hidden md:inline">Search anything...</span>
-              <kbd className="hidden md:inline-block text-[10px] bg-surface px-1.5 py-0.5 rounded border border-border text-text-tertiary">
+              <kbd className="hidden md:inline-block text-[10px] bg-surface px-1.5 py-0.5 rounded border border-border text-text-tertiary font-mono">
                 ⌘K
               </kbd>
             </button>

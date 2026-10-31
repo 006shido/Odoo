@@ -56,3 +56,4 @@ describe('Decimal Financial Calculations', () => {
     expect(formatCurrency('-25.00')).toBe('-$25.00');
   });
 });
+

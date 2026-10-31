@@ -1,29 +1,18 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import {
-  ExternalLink,
-  Zap,
-  FileText,
   CreditCard,
   CheckCircle2,
-  XCircle,
   Building,
-  Mail,
-  Phone,
-  MapPin,
-  Clock,
-  Printer,
-  ChevronRight,
   ShieldCheck,
-  AlertCircle,
 } from 'lucide-react';
 import { useSubscription } from '@/lib/store/subscriptionStore';
-import { formatCurrency, addDecimals } from '@/lib/decimal';
+import { formatCurrency } from '@/lib/decimal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { cn } from '@/lib/utils';
-import type { Quotation, Invoice } from '@/types';
+import type { Invoice } from '@/types';
 
 export function CustomerPortalPage() {
   const navigate = useNavigate();
@@ -72,9 +61,6 @@ export function CustomerPortalPage() {
   const myPayments = useMemo(() => {
     return payments.filter((p) => p.customer_id === activeCustomer.id);
   }, [payments, activeCustomer]);
-
-  // Open invoices
-  const unpaidInvoices = myInvoices.filter((i) => i.status !== 'paid' && i.status !== 'void');
 
   const handleSimulatePayment = (invoice: Invoice) => {
     setPayingInvoice(invoice);

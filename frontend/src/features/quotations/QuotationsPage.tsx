@@ -9,10 +9,7 @@ import {
   Zap,
   Printer,
   X,
-  ExternalLink,
-  Percent,
   Trash2,
-  Calendar,
 } from 'lucide-react';
 import { useSubscription } from '@/lib/store/subscriptionStore';
 import {
@@ -23,7 +20,6 @@ import {
   calculatePercentage,
 } from '@/lib/decimal';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { cn } from '@/lib/utils';
 import type { Quotation, QuotationStatus } from '@/types';
@@ -759,6 +755,17 @@ export function QuotationsPage() {
                 </div>
               </div>
 
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-text-primary">Notes & Commercial Terms</label>
+                <textarea
+                  rows={2}
+                  value={builderNotes}
+                  onChange={(e) => setBuilderNotes(e.target.value)}
+                  placeholder="Terms and conditions, SLA references..."
+                  className="w-full px-3 py-2 rounded-xl border border-border text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                />
+              </div>
+
               <div className="mt-6 flex items-center justify-end gap-3 pt-3 border-t border-border/80">
                 <Button type="button" variant="outline" size="sm" onClick={() => setIsCreateOpen(false)} className="rounded-xl">
                   Cancel
@@ -774,3 +781,4 @@ export function QuotationsPage() {
     </div>
   );
 }
+

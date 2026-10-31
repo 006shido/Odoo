@@ -10,9 +10,6 @@ import {
   RefreshCw,
   CheckCircle2,
   Calendar,
-  Layers,
-  ArrowRight,
-  Filter,
 } from 'lucide-react';
 import { useSubscription } from '@/lib/store/subscriptionStore';
 import { formatCurrency, addDecimals } from '@/lib/decimal';

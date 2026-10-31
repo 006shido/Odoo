@@ -11,6 +11,7 @@ import {
   FileText,
   Zap,
   X,
+  CreditCard,
 } from 'lucide-react';
 import { useSubscription } from '@/lib/store/subscriptionStore';
 import { formatCurrency } from '@/lib/decimal';
@@ -28,6 +29,8 @@ export function CustomersPage() {
     archiveCustomer,
     subscriptions,
     invoices,
+    quotations,
+    payments,
     settings,
     switchCustomerUser,
   } = useSubscription();
@@ -160,6 +163,16 @@ export function CustomersPage() {
     if (!selectedCustomer) return [];
     return invoices.filter((i) => i.customer_id === selectedCustomer.id);
   }, [invoices, selectedCustomer]);
+
+  const customerQuotes = useMemo(() => {
+    if (!selectedCustomer) return [];
+    return quotations.filter((q) => q.customer_id === selectedCustomer.id);
+  }, [quotations, selectedCustomer]);
+
+  const customerPayments = useMemo(() => {
+    if (!selectedCustomer) return [];
+    return payments.filter((p) => p.customer_id === selectedCustomer.id);
+  }, [payments, selectedCustomer]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -455,6 +468,62 @@ export function CustomersPage() {
                           {formatCurrency(inv.total, settings.currency_symbol)}
                         </p>
                         <StatusBadge status={inv.status} className="mt-1" />
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Quotations Tab */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+                <FileText className="h-4 w-4 text-accent" />
+                Commercial Quotations ({customerQuotes.length})
+              </h4>
+              <div className="border border-border/80 rounded-xl overflow-hidden divide-y divide-border/60">
+                {customerQuotes.length === 0 ? (
+                  <p className="p-4 text-xs text-text-secondary text-center">No quotations generated yet</p>
+                ) : (
+                  customerQuotes.map((q) => (
+                    <div key={q.id} className="p-3.5 flex items-center justify-between text-xs">
+                      <div>
+                        <p className="font-semibold text-text-primary">{q.number}</p>
+                        <p className="text-text-secondary">Issued: {q.issue_date} • Expires: {q.expiry_date}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-text-primary">
+                          {formatCurrency(q.total, settings.currency_symbol)}
+                        </p>
+                        <StatusBadge status={q.status} className="mt-1" />
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Payments & Receipts Tab */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-success" />
+                Payments & Receipts ({customerPayments.length})
+              </h4>
+              <div className="border border-border/80 rounded-xl overflow-hidden divide-y divide-border/60">
+                {customerPayments.length === 0 ? (
+                  <p className="p-4 text-xs text-text-secondary text-center">No payment transactions recorded</p>
+                ) : (
+                  customerPayments.map((p) => (
+                    <div key={p.id} className="p-3.5 flex items-center justify-between text-xs">
+                      <div>
+                        <p className="font-semibold text-text-primary">{p.number}</p>
+                        <p className="text-text-secondary">{p.method.toUpperCase()} • Ref: {p.reference || 'N/A'}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-success">
+                          +{formatCurrency(p.amount, settings.currency_symbol)}
+                        </p>
+                        <p className="text-[10px] text-text-tertiary mt-0.5">{p.received_date}</p>
                       </div>
                     </div>
                   ))

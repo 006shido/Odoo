@@ -1,21 +1,17 @@
 import { useState, useMemo } from 'react';
 import {
-  CreditCard,
   Plus,
   Search,
   CheckCircle2,
   DollarSign,
-  Building,
   Printer,
   X,
   AlertCircle,
-  ArrowRight,
 } from 'lucide-react';
 import { useSubscription } from '@/lib/store/subscriptionStore';
 import {
   formatCurrency,
   addDecimals,
-  subtractDecimals,
   compareDecimals,
 } from '@/lib/decimal';
 import { Button } from '@/components/ui/button';
