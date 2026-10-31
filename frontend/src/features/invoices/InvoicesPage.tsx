@@ -43,19 +43,19 @@ export function InvoicesPage() {
 
       if (statusFilter === 'all') return matchSearch;
       if (statusFilter === 'overdue') {
-        return matchSearch && (inv.is_overdue || (inv.status !== 'paid' && inv.status !== 'void' && inv.due_date < '2026-10-31'));
+        return matchSearch && (inv.is_overdue || (inv.status !== 'paid' && inv.status !== 'void' && inv.due_date < new Date().toISOString().slice(0, 10)));
       }
       return matchSearch && inv.status === statusFilter;
     });
   }, [invoices, search, statusFilter]);
 
-  const handleExecuteBilling = () => {
+  const handleExecuteBilling = async () => {
     setIsRunning(true);
-    setTimeout(() => {
-      const result = runBillingEngine(targetDate);
+    try {
+      const result = await runBillingEngine(targetDate);
       setBillingResult(result);
-      setIsRunning(false);
-    }, 600);
+    } catch { /* The shared request banner shows the server error. */ }
+    finally { setIsRunning(false); }
   };
 
   return (
@@ -132,7 +132,7 @@ export function InvoicesPage() {
                   const isOverdue =
                     inv.status !== 'void' &&
                     inv.status !== 'paid' &&
-                    (inv.is_overdue || inv.due_date < '2026-10-31');
+                    (inv.is_overdue || inv.due_date < new Date().toISOString().slice(0, 10));
 
                   return (
                     <tr
@@ -340,8 +340,8 @@ export function InvoicesPage() {
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={() => {
-                      voidInvoice(selectedInvoice.id);
+                    onClick={async () => {
+                      await voidInvoice(selectedInvoice.id);
                       setSelectedInvoice(null);
                     }}
                     className="rounded-xl"

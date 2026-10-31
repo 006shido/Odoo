@@ -36,6 +36,8 @@ class Subscription(models.Model):
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
 
     paused_at = models.DateTimeField(null=True, blank=True)
+    discount = models.ForeignKey('discounts.Discount', on_delete=models.SET_NULL, null=True, blank=True)
+    auto_renew = models.BooleanField(default=True)
     pause_reason = models.TextField(blank=True)
     closed_at = models.DateTimeField(null=True, blank=True)
     close_reason = models.TextField(blank=True)

@@ -39,7 +39,7 @@ export function ControlTowerPage() {
 
   // Overdue Invoices
   const overdueInvoices = invoices.filter(
-    (inv) => inv.status !== 'void' && inv.status !== 'paid' && (inv.is_overdue || inv.due_date < '2026-10-31'),
+    (inv) => inv.status !== 'void' && inv.status !== 'paid' && (inv.is_overdue || inv.due_date < new Date().toISOString().slice(0, 10)),
   );
 
   // Paused Subscriptions
@@ -47,19 +47,19 @@ export function ControlTowerPage() {
 
   // Subscriptions with upcoming renewals (next 14 days)
   const upcomingRenewals = subscriptions.filter(
-    (s) => s.status === 'active' && s.next_billing_date && s.next_billing_date <= '2026-11-20',
+    (s) => s.status === 'active' && s.next_billing_date && s.next_billing_date <= new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10),
   );
 
   // Total overdue balance
   const totalOverdueBalance = overdueInvoices.reduce((acc, i) => addDecimals(acc, i.balance_due), '0.00');
 
-  const handleExecuteBilling = () => {
+  const handleExecuteBilling = async () => {
     setIsRunningEngine(true);
-    setTimeout(() => {
-      const result = runBillingEngine(selectedRunDate);
+    try {
+      const result = await runBillingEngine(selectedRunDate);
       setLatestBillingResult(result);
-      setIsRunningEngine(false);
-    }, 700);
+    } catch { /* The shared request banner shows the server error. */ }
+    finally { setIsRunningEngine(false); }
   };
 
   return (
@@ -343,7 +343,7 @@ export function ControlTowerPage() {
                       {!sub.auto_renew && sub.can_renew !== false && <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => setSubscriptionAutoRenew(sub.id, true)}
+                        onClick={async () => await setSubscriptionAutoRenew(sub.id, true)}
                         className="rounded-xl"
                       >
                         <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
@@ -408,7 +408,7 @@ export function ControlTowerPage() {
                       </div>
                       <Button
                         size="sm"
-                        onClick={() => resumeSubscription(sub.id)}
+                        onClick={async () => await resumeSubscription(sub.id)}
                         className="rounded-xl shadow-xs"
                       >
                         <Play className="h-3.5 w-3.5 mr-1.5" />

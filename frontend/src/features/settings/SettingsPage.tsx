@@ -20,8 +20,6 @@ export function SettingsPage() {
     updateSettings,
     allUsers,
     currentUser,
-    switchRole,
-    resetToDefaults,
   } = useSubscription();
 
   const [activeSection, setActiveSection] = useState<'general' | 'financial' | 'numbering' | 'team' | 'data'>('general');
@@ -30,9 +28,9 @@ export function SettingsPage() {
   const [formSettings, setFormSettings] = useState<WorkspaceSettings>(settings);
   const [isSaved, setIsSaved] = useState(false);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateSettings(formSettings);
+    await updateSettings(formSettings);
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2500);
   };
@@ -383,15 +381,7 @@ export function SettingsPage() {
                         >
                           {u.role}
                         </Badge>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => switchRole(u.role)}
-                          className="text-xs text-accent hover:text-accent-hover"
-                        >
-                          Switch User
-                        </Button>
+
                       </div>
                     </div>
                   ))}
@@ -405,39 +395,10 @@ export function SettingsPage() {
               </div>
             )}
 
-            {/* Section 5: Data Management */}
-            {activeSection === 'data' && (
-              <div className="space-y-4">
-                <div className="border-b border-border/80 pb-3">
-                  <h3 className="text-base font-bold text-text-primary">Demo State Management</h3>
-                  <p className="text-xs text-text-secondary mt-0.5">
-                    Reset demo workspace records to the pristine initial realistic seed state.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-xl bg-warning-light/50 border border-warning/30 space-y-3">
-                  <div className="flex items-start gap-2.5">
-                    <RotateCcw className="h-5 w-5 text-warning shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="text-sm font-semibold text-text-primary">Reset Demo Records</h4>
-                      <p className="text-xs text-text-secondary mt-0.5">
-                        Restores initial customers, catalogue products, plans, active & paused subscriptions, quotations, and verified payment allocations.
-                      </p>
-                    </div>
-                  </div>
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={resetToDefaults}
-                    className="rounded-xl bg-surface"
-                  >
-                    Restore Clean Demo State
-                  </Button>
-                </div>
-              </div>
-            )}
+            {activeSection === 'data' && <div className="space-y-3">
+              <h3 className="text-base font-bold text-text-primary">Shared workspace data</h3>
+              <p className="text-sm text-text-secondary">Changes are stored in the shared database. Sign out to use a different account. Demo resets are unavailable for live records.</p>
+            </div>}
 
             {/* Save Button Bar */}
             {activeSection !== 'team' && activeSection !== 'data' && !isStaffReadOnly && (

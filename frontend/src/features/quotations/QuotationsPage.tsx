@@ -190,12 +190,12 @@ export function QuotationsPage() {
     });
   };
 
-  const handleCreateSubmit = (e: React.FormEvent) => {
+  const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!builderCustomer || builderLines.length === 0) return;
     setBuilderError('');
     try {
-      createQuotation({
+      await createQuotation({
         customer_id: builderCustomer,
         items: builderLines,
         discount_id: builderDiscount || undefined,
@@ -209,8 +209,8 @@ export function QuotationsPage() {
     }
   };
 
-  const handleConvert = (quote: Quotation) => {
-    const res = convertQuotationToSubscription(quote.id);
+  const handleConvert = async (quote: Quotation) => {
+    const res = await convertQuotationToSubscription(quote.id);
     if (res.error) {
       alert(res.error);
     } else {
@@ -447,14 +447,14 @@ export function QuotationsPage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => {
-                      sendQuotation(selectedQuote.id);
+                    onClick={async () => {
+                      await sendQuotation(selectedQuote.id);
                       setSelectedQuote(null);
                     }}
                     className="rounded-xl"
                   >
                     <Send className="h-3.5 w-3.5 mr-1.5" />
-                    Send to Customer
+                    Publish to Customer Portal
                   </Button>
                 )}
 
@@ -462,8 +462,8 @@ export function QuotationsPage() {
                   <>
                     <Button
                       size="sm"
-                      onClick={() => {
-                        acceptQuotation(selectedQuote.id);
+                      onClick={async () => {
+                        await acceptQuotation(selectedQuote.id);
                         setSelectedQuote(null);
                       }}
                       className="rounded-xl shadow-xs"
@@ -474,8 +474,8 @@ export function QuotationsPage() {
                     <Button
                       size="sm"
                       variant="destructive"
-                      onClick={() => {
-                        rejectQuotation(selectedQuote.id);
+                      onClick={async () => {
+                        await rejectQuotation(selectedQuote.id);
                         setSelectedQuote(null);
                       }}
                       className="rounded-xl"
@@ -493,7 +493,7 @@ export function QuotationsPage() {
                     className="rounded-xl shadow-xs bg-success hover:bg-success/90 text-white"
                   >
                     <Zap className="h-3.5 w-3.5 mr-1.5" />
-                    Convert to Active Subscription & Invoice
+                    Convert to Active Subscription
                   </Button>
                 )}
 

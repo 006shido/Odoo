@@ -73,7 +73,7 @@ function AdminPlansPage() {
     setIsCreateOpen(true);
   };
 
-  const handleSubmitCreate = (e: React.FormEvent) => {
+  const handleSubmitCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     const product = products.find((p) => p.id === formData.product_id);
     if (!product || !formData.name || !formData.code) return;
@@ -83,7 +83,7 @@ function AdminPlansPage() {
       .map((f) => f.trim())
       .filter(Boolean);
 
-    createPlan({
+    await createPlan({
       name: formData.name,
       code: formData.code,
       product_id: product.id,

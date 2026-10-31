@@ -93,17 +93,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
               onClose();
             },
           },
-          {
-            id: 'act-role-cust',
-            title: 'Simulate Customer Portal View',
-            subtitle: 'Switch perspective to Customer role',
-            icon: Shield,
-            action: () => {
-              switchRole('customer');
-              navigate('/portal');
-              onClose();
-            },
-          },
+
         ],
         matches: [],
       };

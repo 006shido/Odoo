@@ -14,28 +14,20 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 export function ReportsPage() {
-  const { subscriptions, invoices, payments, settings } = useSubscription();
+  const { subscriptions, invoices: allInvoices, payments: allPayments, settings, metrics } = useSubscription();
   const [dateRange, setDateRange] = useState<'30d' | 'quarter' | 'ytd' | 'all'>('ytd');
 
   // Compute MRR & ARR
   const activeSubs = subscriptions.filter((s) => s.status === 'active');
-  const mrrAmount = useMemo(() => {
-    let total = '0.00';
-    activeSubs.forEach((sub) => {
-      if (sub.frequency === 'yearly') {
-        const monthly = (parseFloat(sub.recurring_amount) / 12).toFixed(2);
-        total = addDecimals(total, monthly);
-      } else if (sub.frequency === 'weekly') {
-        const monthly = (parseFloat(sub.recurring_amount) * 4.33).toFixed(2);
-        total = addDecimals(total, monthly);
-      } else {
-        total = addDecimals(total, sub.recurring_amount);
-      }
-    });
-    return total;
-  }, [activeSubs]);
-
-  const arrAmount = (parseFloat(mrrAmount) * 12).toFixed(2);
+  const mrrAmount = metrics.mrr;
+  const arrAmount = metrics.arr;
+  const today = new Date();
+  const cutoff = dateRange === '30d' ? new Date(today.getFullYear(), today.getMonth(), today.getDate() - 30)
+    : dateRange === 'quarter' ? new Date(today.getFullYear(), Math.floor(today.getMonth()/3)*3, 1)
+    : dateRange === 'ytd' ? new Date(today.getFullYear(), 0, 1) : new Date(0);
+  const lower = cutoff.toLocaleDateString('en-CA');
+  const invoices = allInvoices.filter(i => i.issue_date >= lower);
+  const payments = allPayments.filter(p => p.received_date >= lower);
 
   // Invoiced vs Cash Collected
   const totalInvoiced = useMemo(() => {
@@ -61,7 +53,7 @@ export function ReportsPage() {
       if (balance <= 0) return;
 
       const dueDate = new Date(inv.due_date);
-      const today = new Date('2026-10-31');
+      const today = new Date();
       const diffDays = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 3600 * 24));
 
       if (diffDays <= 0) {
@@ -234,7 +226,7 @@ export function ReportsPage() {
               Accounts Receivable Ageing
             </h3>
             <p className="text-xs text-text-secondary mt-0.5">
-              Outstanding invoice balances grouped by overdue brackets (as of Oct 31, 2026)
+              Outstanding invoice balances grouped by overdue brackets for the selected range
             </p>
           </div>
 

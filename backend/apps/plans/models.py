@@ -18,6 +18,9 @@ class SubscriptionPlan(models.Model):
         max_length=20, choices=BillingFrequency.choices, default=BillingFrequency.MONTHLY
     )
     price = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    setup_fee = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    features = models.JSONField(default=list)
+    auto_renew = models.BooleanField(default=True)
     minimum_quantity = models.PositiveIntegerField(default=1)
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)

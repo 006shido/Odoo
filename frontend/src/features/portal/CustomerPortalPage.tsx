@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import {
   CreditCard,
   CheckCircle2,
-  Building,
   ShieldCheck,
 } from 'lucide-react';
 import { useSubscription } from '@/lib/store/subscriptionStore';
@@ -11,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { cn } from '@/lib/utils';
-import type { Invoice } from '@/types';
 
 export function CustomerPortalPage() {
   const {
@@ -24,15 +22,10 @@ export function CustomerPortalPage() {
     settings,
     acceptQuotation,
     rejectQuotation,
-    recordPayment,
     setSubscriptionAutoRenew,
   } = useSubscription();
 
   const [activeTab, setActiveTab] = useState<'subs' | 'invoices' | 'quotes' | 'payments' | 'profile'>('subs');
-  const [isPayModalOpen, setIsPayModalOpen] = useState(false);
-  const [payingInvoice, setPayingInvoice] = useState<Invoice | null>(null);
-  const [payMethod, setPayMethod] = useState<'card' | 'bank_transfer'>('card');
-  const [isProcessing, setIsProcessing] = useState(false);
   const today = new Date().toISOString().slice(0, 10);
 
   // Active customer identity
@@ -68,31 +61,6 @@ export function CustomerPortalPage() {
     return payments.filter((p) => p.customer_id === activeCustomer.id);
   }, [payments, activeCustomer]);
 
-  const handleSimulatePayment = (invoice: Invoice) => {
-    setPayingInvoice(invoice);
-    setIsPayModalOpen(true);
-  };
-
-  const handleConfirmPayment = () => {
-    if (!payingInvoice) return;
-    setIsProcessing(true);
-
-    setTimeout(() => {
-      recordPayment({
-        customer_id: activeCustomer.id,
-        amount: payingInvoice.balance_due,
-        method: payMethod,
-        reference: `PORTAL-PAY-${Date.now().toString().slice(-6)}`,
-        received_date: new Date().toISOString().split('T')[0]!,
-        notes: 'Online payment via Customer Self-Service Portal.',
-        allocations: [{ invoice_id: payingInvoice.id, amount: payingInvoice.balance_due }],
-      });
-
-      setIsProcessing(false);
-      setIsPayModalOpen(false);
-      setPayingInvoice(null);
-    }, 600);
-  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
@@ -198,7 +166,7 @@ export function CustomerPortalPage() {
                         size="sm"
                         variant="outline"
                         className="h-8 rounded-lg text-xs"
-                        onClick={() => setSubscriptionAutoRenew(sub.id, !sub.auto_renew)}
+                        onClick={async () => await setSubscriptionAutoRenew(sub.id, !sub.auto_renew)}
                       >
                         Auto-renew {sub.auto_renew ? 'on · turn off' : 'off · turn on'}
                       </Button>
@@ -225,7 +193,7 @@ export function CustomerPortalPage() {
                   <th className="px-6 py-3.5">Status</th>
                   <th className="px-6 py-3.5">Total Amount</th>
                   <th className="px-6 py-3.5">Balance Due</th>
-                  <th className="px-6 py-3.5 text-right">Payment</th>
+                  <th className="px-6 py-3.5 text-right">Invoice</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
@@ -262,11 +230,11 @@ export function CustomerPortalPage() {
                         {inv.balance_due !== '0.00' && inv.status !== 'void' ? (
                           <Button
                             size="sm"
-                            onClick={() => handleSimulatePayment(inv)}
+                            onClick={() => window.open(`/api/v1/billing/invoices/${inv.id}/download_pdf/`, '_blank', 'noopener,noreferrer')}
                             className="rounded-xl text-xs shadow-xs"
                           >
                             <CreditCard className="h-3.5 w-3.5 mr-1.5" />
-                            Pay {formatCurrency(inv.balance_due, settings.currency_symbol)}
+                            Download Invoice
                           </Button>
                         ) : (
                           <span className="text-xs text-success font-semibold flex items-center justify-end gap-1">
@@ -321,7 +289,7 @@ export function CustomerPortalPage() {
                       <div className="flex items-center gap-2">
                         <Button
                           size="sm"
-                          onClick={() => acceptQuotation(q.id, `${activeCustomer.name} (Client Portal)`)}
+                          onClick={async () => await acceptQuotation(q.id, `${activeCustomer.name} (Client Portal)`)}
                           className="rounded-xl shadow-xs bg-success hover:bg-success/90 text-white"
                         >
                           <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
@@ -330,7 +298,7 @@ export function CustomerPortalPage() {
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => rejectQuotation(q.id)}
+                          onClick={async () => await rejectQuotation(q.id)}
                           className="rounded-xl"
                         >
                           Decline
@@ -420,71 +388,6 @@ export function CustomerPortalPage() {
         </div>
       )}
 
-      {/* Modal: Simulate Online Payment */}
-      {isPayModalOpen && payingInvoice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsPayModalOpen(false)} />
-          <div className="relative w-full max-w-md rounded-2xl bg-surface p-6 shadow-2xl border border-border z-10 animate-in zoom-in-95 duration-150 space-y-4">
-            <h3 className="text-lg font-bold text-text-primary">Pay Invoice {payingInvoice.number}</h3>
-            <p className="text-xs text-text-secondary">
-              Review amount and confirm instant payment simulation.
-            </p>
-
-            <div className="p-4 rounded-xl bg-surface-secondary border border-border/70 text-center space-y-1">
-              <span className="text-xs text-text-secondary">Outstanding Balance Due</span>
-              <div className="text-3xl font-extrabold text-text-primary">
-                {formatCurrency(payingInvoice.balance_due, settings.currency_symbol)}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-text-primary">Select Payment Method</label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPayMethod('card')}
-                  className={cn(
-                    'p-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all',
-                    payMethod === 'card'
-                      ? 'border-accent bg-accent/10 text-accent ring-1 ring-accent'
-                      : 'border-border bg-surface text-text-secondary',
-                  )}
-                >
-                  <CreditCard className="h-4 w-4" />
-                  Credit Card
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPayMethod('bank_transfer')}
-                  className={cn(
-                    'p-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all',
-                    payMethod === 'bank_transfer'
-                      ? 'border-accent bg-accent/10 text-accent ring-1 ring-accent'
-                      : 'border-border bg-surface text-text-secondary',
-                  )}
-                >
-                  <Building className="h-4 w-4" />
-                  ACH / Wire
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-border/80">
-              <Button variant="outline" size="sm" onClick={() => setIsPayModalOpen(false)} className="rounded-xl">
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleConfirmPayment}
-                disabled={isProcessing}
-                className="rounded-xl shadow-xs"
-              >
-                {isProcessing ? 'Authorizing...' : `Confirm & Pay ${formatCurrency(payingInvoice.balance_due, settings.currency_symbol)}`}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

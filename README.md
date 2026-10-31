@@ -23,15 +23,13 @@ Brightloop is a web-based subscription management platform built to manage the c
 
 ---
 
-## User roles & evaluation accounts
+## Authentication and database integration
 
-The login screen includes quick fill buttons and a role switcher:
+The active React interface uses Django session authentication and persists records in Supabase PostgreSQL through `/api/v1/workspace/`. Demo role switching and browser-only business storage are disabled. Create a customer account through the login page; staff/admin accounts require administrator provisioning.
 
-| Role | Email | Password | Access scope |
-|---|---|---|---|
-| Admin | `admin@brightloop.io` | `Brightloop@2026` | Full system access: catalog, plans, discounts, billing engine, and control tower. |
-| Staff | `staff@brightloop.io` | `Brightloop@2026` | Daily operations: customers, quotes, subscriptions, invoices, and payments. |
-| Customer | `alex@acmecorp.com` | `Brightloop@2026` | Self-service portal: view subscriptions, accept quotes, download invoice PDFs, make payments. |
+For this development machine, the user-requested local administrator credentials are in `backend/.env.local-admin` (Git ignored). Credentials are not included in this repository. Teammates need their own private backend `.env`; copy `.env.example` as a template, never commit the populated file.
+
+See [integration contract](docs/contracts/workspace-integration.md) for API commands, validation and remaining feature boundaries, and [database setup](backend/SUPABASE.md) for connection instructions.
 
 ---
 
@@ -43,14 +41,14 @@ The login screen includes quick fill buttons and a role switcher:
 cd backend
 
 # Activate virtual environment
-source venv/bin/activate
+# Windows: .venv\Scripts\activate
+# macOS/Linux: source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Run migrations and seed demo data
+# Copy .env.example to .env and configure your database first
 python manage.py migrate
-python manage.py seed_demo_data
 
 # (Optional) Test the recurring billing engine
 python manage.py run_billing_day
@@ -84,14 +82,14 @@ The frontend runs at `http://localhost:5173`.
   ```bash
   cd backend
   python manage.py test tests
-  # Ran 4 tests in 0.23s -> OK
+  # Current integration validation: 15 backend tests passed on isolated SQLite
   ```
 
 - **Frontend tests** (UI primitives, states, badges, dialogs, pagination, decimal math):
   ```bash
   cd frontend
   npm run test
-  # 11 test files passed, 48 of 48 tests passed
+  # Current integration validation: 12 test files, 51 tests passed
   ```
 
 - **Typecheck and build**:

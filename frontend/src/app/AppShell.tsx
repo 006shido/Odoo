@@ -28,7 +28,7 @@ import { useSubscription } from '@/lib/store/subscriptionStore';
 import { useTheme } from '@/lib/theme';
 import { CommandPalette } from '@/components/shared/command-palette';
 import { cn } from '@/lib/utils';
-import { api } from '@/lib/api';
+
 
 export function AppShell() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -37,6 +37,7 @@ export function AppShell() {
 
   const {
     currentUser,
+    logout,
     notifications,
     markNotificationAsRead,
     clearAllNotifications,
@@ -50,13 +51,12 @@ export function AppShell() {
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
-    localStorage.removeItem('brightloop_session');
-    try { await api.post('/auth/logout/'); } catch { /* the local demo session is already cleared */ }
+    await logout();
     navigate('/login', { replace: true });
   };
 
   // Badges calculation
-  const overdueCount = invoices.filter((i) => i.is_overdue || (i.status === 'issued' && i.due_date < '2026-10-31')).length;
+  const overdueCount = invoices.filter((i) => i.is_overdue || (i.status === 'issued' && i.due_date < new Date().toISOString().slice(0, 10))).length;
   const acceptedQuoteCount = quotations.filter((q) => q.status === 'accepted').length;
   const pausedSubsCount = subscriptions.filter((s) => s.status === 'paused').length;
   const unreadNotifs = notifications.filter((n) => !n.read).length;

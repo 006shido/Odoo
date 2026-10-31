@@ -42,9 +42,9 @@ export function SubscriptionsPage() {
     });
   }, [subscriptions, search, statusFilter]);
 
-  const handleConfirmPause = () => {
+  const handleConfirmPause = async () => {
     if (!selectedSub) return;
-    pauseSubscription(selectedSub.id, pauseReason || 'Requested temporary pause');
+    await pauseSubscription(selectedSub.id, pauseReason || 'Requested temporary pause');
     setIsPauseModalOpen(false);
     setPauseReason('');
     setSelectedSub(null);
@@ -169,7 +169,7 @@ export function SubscriptionsPage() {
                         {sub.status === 'paused' && (
                           <Button
                             size="sm"
-                            onClick={() => resumeSubscription(sub.id)}
+                            onClick={async () => await resumeSubscription(sub.id)}
                             className="h-8 text-xs rounded-xl shadow-xs"
                           >
                             <Play className="h-3 w-3 mr-1" />
@@ -306,8 +306,8 @@ export function SubscriptionsPage() {
                     {selectedSub.can_renew !== false && !selectedSub.auto_renew && <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        setSubscriptionAutoRenew(selectedSub.id, true);
+                      onClick={async () => {
+                        await setSubscriptionAutoRenew(selectedSub.id, true);
                         setSelectedSub(null);
                       }}
                       className="rounded-xl"
@@ -321,8 +321,8 @@ export function SubscriptionsPage() {
                 {selectedSub.status === 'paused' && (
                   <Button
                     size="sm"
-                    onClick={() => {
-                      resumeSubscription(selectedSub.id);
+                    onClick={async () => {
+                      await resumeSubscription(selectedSub.id);
                       setSelectedSub(null);
                     }}
                     className="rounded-xl shadow-xs"
@@ -336,8 +336,8 @@ export function SubscriptionsPage() {
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={() => {
-                      closeSubscription(selectedSub.id);
+                    onClick={async () => {
+                      await closeSubscription(selectedSub.id);
                       setSelectedSub(null);
                     }}
                     className="rounded-xl"

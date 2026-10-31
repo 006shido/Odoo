@@ -9,9 +9,9 @@ class IsAdminOrReadOnly(permissions.BasePermission):
             return True
         if request.user and request.user.is_authenticated:
             return getattr(request.user, 'role', '') == CustomUser.Role.ADMIN or request.user.is_superuser
-        return True
+        return False
 
 class DiscountViewSet(viewsets.ModelViewSet):
     queryset = Discount.objects.all().select_related('specific_product').order_by('-created_at')
     serializer_class = DiscountSerializer
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]

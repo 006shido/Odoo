@@ -76,16 +76,16 @@ export function App() {
 }
 
 function HomeRoute() {
-  const { currentUser } = useSubscription();
-  const isSignedIn = localStorage.getItem('brightloop_session') === 'active';
+  const { currentUser, isSignedIn, isLoading } = useSubscription();
+  if (isLoading) return <div role="status" className="p-8">Loading your workspace…</div>;
   if (!isSignedIn) return <WelcomePage />;
   return <Navigate to={currentUser.role === 'customer' ? '/plans' : '/dashboard'} replace />;
 }
 
 function AuthenticatedShell() {
-  const { currentUser } = useSubscription();
+  const { currentUser, isSignedIn, isLoading } = useSubscription();
   const location = useLocation();
-  const isSignedIn = localStorage.getItem('brightloop_session') === 'active';
+  if (isLoading) return <div role="status" className="p-8">Loading your workspace…</div>;
 
   if (!isSignedIn) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   if (currentUser.role === 'customer' && !['/plans', '/portal'].includes(location.pathname)) {
