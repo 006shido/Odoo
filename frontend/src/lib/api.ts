@@ -51,12 +51,13 @@ async function request<T>(
 
   let csrfToken = getCSRFToken();
   if (!['GET', 'HEAD', 'OPTIONS'].includes((restOptions.method || 'GET').toUpperCase()) && !csrfToken) {
-    const bootstrap = await fetch(`${API_BASE}/auth/csrf/`, { credentials: 'same-origin' });
+    const bootstrap = await fetch(`${API_BASE}/auth/csrf/`, { credentials: 'same-origin', signal: AbortSignal.timeout(10000) });
     if (!bootstrap.ok) throw new ApiError(bootstrap.status, bootstrap.statusText, null);
     csrfToken = (await bootstrap.json()).csrfToken;
   }
 
   const response = await fetch(url, {
+    signal: AbortSignal.timeout(20000),
     credentials: 'same-origin',
     ...restOptions,
     headers: {

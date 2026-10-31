@@ -70,8 +70,7 @@ export function LoginPage() {
     try {
       if (mode === 'signin') {
         const result = await api.post<{ user: AuthUser }>('/auth/login/', { email, password });
-        const session = await api.get<{ customer_id?: string }>('/auth/me/');
-        await startSession({ ...result.user, customer_id: session.customer_id });
+        await startSession(result.user);
       } else if (mode === 'create') {
         const result = await api.post<{ user: AuthUser }>('/auth/register/', {
           email,
@@ -80,8 +79,7 @@ export function LoginPage() {
           last_name: lastName,
           company_name: company,
         });
-        const session = await api.get<{ customer_id?: string }>('/auth/me/');
-        await startSession({ ...result.user, customer_id: session.customer_id });
+        await startSession(result.user);
       } else {
         const result = await api.post<{ message: string }>('/auth/forgot-password/', { email });
         setNotice(result.message || 'If an account exists, a reset link is on its way.');
