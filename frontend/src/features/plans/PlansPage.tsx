@@ -1,24 +1,19 @@
 import { useState } from 'react';
 import {
-  Sparkles,
   Plus,
   Check,
-  Zap,
   Clock,
-  Layers,
-  ChevronRight,
   ShieldCheck,
-  Tag,
 } from 'lucide-react';
 import { useSubscription } from '@/lib/store/subscriptionStore';
 import { formatCurrency } from '@/lib/decimal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import type { SubscriptionPlan, BillingFrequency } from '@/types';
+import type { BillingFrequency } from '@/types';
 
 export function PlansPage() {
-  const { plans, products, createPlan, updatePlan, settings } = useSubscription();
+  const { plans, products, createPlan, settings } = useSubscription();
   const [frequencyFilter, setFrequencyFilter] = useState<'all' | BillingFrequency>('all');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 

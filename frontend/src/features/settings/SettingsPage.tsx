@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import {
-  Settings,
   Building,
   DollarSign,
   Hash,
-  Shield,
   RotateCcw,
   CheckCircle2,
   Users,
@@ -14,7 +12,7 @@ import { useSubscription } from '@/lib/store/subscriptionStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import type { WorkspaceSettings, UserRole } from '@/types';
+import type { WorkspaceSettings } from '@/types';
 
 export function SettingsPage() {
   const {

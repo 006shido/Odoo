@@ -6,14 +6,11 @@ import {
   RefreshCw,
   Printer,
   CreditCard,
-  AlertCircle,
-  CheckCircle2,
-  XCircle,
   X,
   Zap,
 } from 'lucide-react';
 import { useSubscription } from '@/lib/store/subscriptionStore';
-import { formatCurrency, addDecimals } from '@/lib/decimal';
+import { formatCurrency } from '@/lib/decimal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/shared/status-badge';
@@ -25,7 +22,6 @@ export function InvoicesPage() {
   const {
     invoices,
     settings,
-    issueInvoice,
     voidInvoice,
     runBillingEngine,
   } = useSubscription();
